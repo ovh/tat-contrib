@@ -8,6 +8,7 @@ Tat Documentation: https://ovh.github.io/tat/overview/
 
 Tat Ecosystem Documentation: https://ovh.github.io/tat/ecosystem/
 
+## uService ready to use
 
 ## AL2TAT
 
@@ -23,3 +24,13 @@ Tat Ecosystem Documentation: https://ovh.github.io/tat/ecosystem/
 
 * Documentation: https://ovh.github.io/tat/ecosystem/tat2xmpp/
 * Code and Contribute: https://github.com/ovh/tat-contrib/tree/master/tat2xmpp
+
+### Examples
+
+## Simple uService requesting tat
+
+* Code: https://github.com/ovh/tat-contrib/tree/master/example-uservice
+
+## uService with cron embedded
+
+* Code: https://github.com/ovh/tat-contrib/tree/master/example-uservice-cron
