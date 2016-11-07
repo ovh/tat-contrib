@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/ovh/tat-contrib/mail2tat.svg?branch=master)](https://travis-ci.org/ovh/tat-contrib/mail2tat)
 [![GoDoc](https://godoc.org/github.com/ovh/tat-contrib/mail2tat?status.svg)](https://godoc.org/github.com/ovh/tat-contrib/mail2tat)
 [![Go Report Card](https://goreportcard.com/badge/ovh/tat-contrib/mail2tat)](https://goreportcard.com/report/ovh/tat-contrib/mail2tat)
 

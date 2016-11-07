@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/ovh/tat-contrib/tat2xmpp.svg?branch=master)](https://travis-ci.org/ovh/tat-contrib/tat2xmpp)
 [![GoDoc](https://godoc.org/github.com/ovh/tat-contrib/tat2xmpp?status.svg)](https://godoc.org/github.com/ovh/tat-contrib/tat2xmpp)
 [![Go Report Card](https://goreportcard.com/badge/ovh/tat-contrib/tat2xmpp)](https://goreportcard.com/report/ovh/tat-contrib/tat2xmpp)
 
