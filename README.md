@@ -20,6 +20,13 @@ Tat Ecosystem Documentation: https://ovh.github.io/tat/ecosystem/
 * Documentation: https://ovh.github.io/tat/ecosystem/mail2tat/
 * Code and Contribute: https://github.com/ovh/tat-contrib/tree/master/mail2tat
 
+## Tat2ES
+
+Tat to ElasticSearch
+
+* Documentation: https://ovh.github.io/tat/ecosystem/tat2es/
+* Code and Contribute: https://github.com/ovh/tat-contrib/tree/master/tat2es
+
 ## Tat2XMPP
 
 * Documentation: https://ovh.github.io/tat/ecosystem/tat2xmpp/

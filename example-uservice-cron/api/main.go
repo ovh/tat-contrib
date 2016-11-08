@@ -71,7 +71,7 @@ var mainCmd = &cobra.Command{
 		initAndStartCron()
 
 		if err := s.ListenAndServe(); err != nil {
-			log.Info("Error while running ListenAndServe: %s", err.Error())
+			log.Errorf("Error while running ListenAndServe: %s", err.Error())
 		}
 	},
 }
@@ -96,7 +96,7 @@ func init() {
 	flags.String("log-level", "", "Log Level : debug, info or warn")
 	viper.BindPFlag("log_level", flags.Lookup("log-level"))
 
-	flags.String("listen-port", "8085", "RunKPI Listen Port")
+	flags.String("listen-port", "8085", "Listen Port")
 	viper.BindPFlag("listen_port", flags.Lookup("listen-port"))
 
 	flags.String("url-tat-engine", "http://localhost:8080", "URL Tat Engine")

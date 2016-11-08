@@ -77,7 +77,7 @@ var mainCmd = &cobra.Command{
 		go tatbot.born()
 
 		if err := s.ListenAndServe(); err != nil {
-			log.Info("Error while running ListenAndServe: %s", err.Error())
+			log.Errorf("Error while running ListenAndServe: %s", err.Error())
 		}
 	},
 }
@@ -104,7 +104,7 @@ func init() {
 	flags.String("log-level", "", "Log Level : debug, info or warn")
 	viper.BindPFlag("log_level", flags.Lookup("log-level"))
 
-	flags.String("listen-port", "8088", "RunKPI Listen Port")
+	flags.String("listen-port", "8088", "Listen Port")
 	viper.BindPFlag("listen_port", flags.Lookup("listen-port"))
 
 	flags.String("hook-key", "", "Hook Key, for using POST http://<url>/hook endpoint, with Header TAT2XMPPKEY ")
