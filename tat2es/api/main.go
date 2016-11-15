@@ -117,7 +117,7 @@ func init() {
 	flags.String("password-tat-engine", "", "Password Tat Engine")
 	viper.BindPFlag("password_tat_engine", flags.Lookup("password-tat-engine"))
 
-	flags.String("protocol-es", "http", "Protocol ElasticSearch")
+	flags.String("protocol-es", "http", "Protocol ElasticSearch http or https")
 	viper.BindPFlag("protocol_es", flags.Lookup("protocol-es"))
 
 	flags.String("host-es", "", "Host ElasticSearch")
