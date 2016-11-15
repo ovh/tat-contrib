@@ -134,7 +134,7 @@ func init() {
 	flags.Int("timestamp", int(time.Now().Unix()), "from: timestamp unix format")
 	viper.BindPFlag("timestamp", flags.Lookup("timestamp"))
 
-	flags.Int("messages-limit", int(time.Now().Unix()), "messages-limit is used by MessageCriteria.Limit for requesting TAT")
+	flags.Int("messages-limit", 50, "messages-limit is used by MessageCriteria.Limit for requesting TAT")
 	viper.BindPFlag("messages_limit", flags.Lookup("messages-limit"))
 
 }

@@ -54,15 +54,19 @@ func work(topic string, index string, timestamp int) {
 
 	countJSON, err := getClient().MessageCount(topic, &tat.MessageCriteria{DateMinUpdate: fmt.Sprintf("%d", timestamp)})
 	if err != nil {
-		log.Errorf("Error while getting messages on topic %s, err:%s", topic, err.Error())
+		log.Errorf("work> Error while getting messages on topic %s, err:%s", topic, err.Error())
 		return
 	}
 
 	skip := 0
-	log.Debugf("Total messages: %d", countJSON.Count)
+	log.Debugf("work> Total messages on topic %s : %d", topic, countJSON.Count)
+
+	//A chan to feed ES
+	postESChan = make(chan *indexableData, 10)
 
 	for {
 		if skip > countJSON.Count {
+			log.Debugf("work> Skip skip(%d) > countJSON.Count (%d) on topic %s", skip, countJSON.Count, topic)
 			break
 		}
 
@@ -84,7 +88,10 @@ func work(topic string, index string, timestamp int) {
 }
 
 func postES() {
+	log.Debugf("postES enter")
 	for recvData := range postESChan {
+		log.Debugf("postES -> recvData for index ", recvData.index)
+
 		indexES := recvData.index
 		for _, m := range recvData.data {
 			tg := make(map[string]string)
