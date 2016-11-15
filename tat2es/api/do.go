@@ -33,6 +33,9 @@ func (r *runner) Run() {
 }
 
 func do() {
+	//A chan to feed ES
+	postESChan = make(chan *indexableData, 10)
+
 	go postES()
 	scheduler := cron.New()
 	t := viper.GetString("topics_indexes")
@@ -60,9 +63,6 @@ func work(topic string, index string, timestamp int) {
 
 	skip := 0
 	log.Debugf("work> Total messages on topic %s : %d", topic, countJSON.Count)
-
-	//A chan to feed ES
-	postESChan = make(chan *indexableData, 10)
 
 	for {
 		if skip > countJSON.Count {
