@@ -129,6 +129,12 @@ func init() {
 	flags.String("password-es", "", "Password ElasticSearch")
 	viper.BindPFlag("password_es", flags.Lookup("password-es"))
 
+	flags.Int("pause-es", 10, "Pause in ms after each send on ES")
+	viper.BindPFlag("pause_es", flags.Lookup("pause-es"))
+
+	flags.Int("pause-tat", 5, "Pause in second after each call on tat for each topic")
+	viper.BindPFlag("pause_tat", flags.Lookup("pause-tat"))
+
 	flags.String("port-es", "9200", "Port ElasticSearch")
 	viper.BindPFlag("port_es", flags.Lookup("port-es"))
 

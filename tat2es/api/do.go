@@ -80,7 +80,7 @@ func work(topic string, index string, timestamp int) {
 
 		postESChan <- &indexableData{msgs.Messages, index}
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(time.Duration(viper.GetInt("pause_tat")) * time.Second)
 		skip += viper.GetInt("messages_limit") - 1
 	}
 
@@ -99,7 +99,7 @@ func postES() {
 	esConn.Password = viper.GetString("password_es")
 
 	for recvData := range postESChan {
-		log.Debugf("postES -> recvData for index ", recvData.index)
+		log.Debugf("postES -> recvData for index %s ", recvData.index)
 
 		indexES := recvData.index
 		for _, m := range recvData.data {
@@ -134,15 +134,14 @@ func postES() {
 					label.Text == "Building" ||
 					label.Text == "Success" ||
 					label.Text == "Failed" {
-
+					dataES["Status"] = label.Text
+					break
 				}
-				dataES["Status"] = label.Text
-				break
 			}
 
-			log.Debugf("push %s to ES", dataES["ID"].(string))
+			log.Debugf("push %s to ES index %s", dataES["ID"].(string), indexES)
 			_, err := esConn.IndexWithParameters(indexES, "tatmessage", dataES["ID"].(string), "", 0, "", "", tat.DateFromFloat(m.DateCreation).Format(time.RFC3339), 0, "", "", false, nil, dataES)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(time.Duration(viper.GetInt("pause_es")) * time.Millisecond)
 			if err != nil {
 				log.Errorf("cannot index message %s in %s :%s", dataES["ID"].(string), indexES, err)
 			}
