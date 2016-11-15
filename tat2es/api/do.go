@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	elastigo "github.com/mattbaird/elastigo/lib"
 	"github.com/ovh/tat"
 	"github.com/robfig/cron"
 	"github.com/spf13/viper"
@@ -33,10 +34,7 @@ func (r *runner) Run() {
 }
 
 func do() {
-	//A chan to feed ES
-	postESChan = make(chan *indexableData, 10)
 
-	go postES()
 	scheduler := cron.New()
 	t := viper.GetString("topics_indexes")
 	for _, arg := range strings.Split(t, ",") {
@@ -77,6 +75,7 @@ func work(topic string, index string, timestamp int) {
 		})
 		if err != nil {
 			log.Errorf("Error while requesting TAT, err:%s", err)
+			continue
 		}
 
 		postESChan <- &indexableData{msgs.Messages, index}
@@ -89,6 +88,16 @@ func work(topic string, index string, timestamp int) {
 
 func postES() {
 	log.Debugf("postES enter")
+
+	//Only one ES Connection
+	esConn = elastigo.NewConn()
+
+	esConn.Protocol = viper.GetString("protocol_es")
+	esConn.Domain = viper.GetString("host_es")
+	esConn.Port = viper.GetString("port_es")
+	esConn.Username = viper.GetString("user_es")
+	esConn.Password = viper.GetString("password_es")
+
 	for recvData := range postESChan {
 		log.Debugf("postES -> recvData for index ", recvData.index)
 

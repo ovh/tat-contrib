@@ -72,9 +72,13 @@ var mainCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		//A chan to feed ES
+		postESChan = make(chan *indexableData, 10)
+
+		go postES()
 		go do()
 
-		log.Infof("Running on %s", viper.GetString("listen_port"))
+		log.Infof("RRunning on %s", viper.GetString("listen_port"))
 		if err := s.ListenAndServe(); err != nil {
 			log.Errorf("Error while running ListenAndServe: %s", err.Error())
 		}
@@ -112,6 +116,9 @@ func init() {
 
 	flags.String("password-tat-engine", "", "Password Tat Engine")
 	viper.BindPFlag("password_tat_engine", flags.Lookup("password-tat-engine"))
+
+	flags.String("protocol-es", "http", "Protocol ElasticSearch")
+	viper.BindPFlag("protocol_es", flags.Lookup("protocol-es"))
 
 	flags.String("host-es", "", "Host ElasticSearch")
 	viper.BindPFlag("host_es", flags.Lookup("host-es"))
