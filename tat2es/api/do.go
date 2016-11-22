@@ -23,25 +23,27 @@ var postESChan chan *indexableData
 type runner struct {
 	topicPath string
 	index     string
-	timestamp int
+	timestamp int64
 }
 
 //Run is called by cron
 func (r *runner) Run() {
 	var t = time.Now().Unix()
 	work(r.topicPath, r.index, r.timestamp)
-	r.timestamp = int(t)
+	r.timestamp = t
 }
 
 func do() {
-
 	scheduler := cron.New()
 	t := viper.GetString("topics_indexes")
+
+	ts := time.Now().Add(time.Duration(viper.GetInt("last_hour_min_creation")) * time.Hour * -1).Unix()
+
 	for _, arg := range strings.Split(t, ",") {
 		tuple := strings.Split(arg, ":")
 		if len(tuple) == 2 {
 			log.Debugf("Add schedule %s for topic %s and es-index %s", viper.GetString("cron_schedule"), tuple[0], tuple[1])
-			scheduler.AddJob(viper.GetString("cron_schedule"), &runner{tuple[0], tuple[1], viper.GetInt("timestamp")})
+			scheduler.AddJob(viper.GetString("cron_schedule"), &runner{tuple[0], tuple[1], ts})
 		} else {
 			log.Errorf("Invalid values for --topics-indexes %s, %s", arg, tuple)
 		}
@@ -51,8 +53,7 @@ func do() {
 	<-forever
 }
 
-func work(topic string, index string, timestamp int) {
-
+func work(topic string, index string, timestamp int64) {
 	countJSON, err := getClient().MessageCount(topic, &tat.MessageCriteria{DateMinUpdate: fmt.Sprintf("%d", timestamp)})
 	if err != nil {
 		log.Errorf("work> Error while getting messages on topic %s, err:%s", topic, err.Error())
@@ -105,7 +106,7 @@ func postES() {
 		for _, m := range recvData.data {
 			tg := make(map[string]string)
 			for _, v := range m.Tags {
-				tuple := strings.Split(v, ":")
+				tuple := strings.SplitN(v, ":", 2)
 				if len(tuple) == 2 {
 					tg[tuple[0]] = tuple[1]
 				}
