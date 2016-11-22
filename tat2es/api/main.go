@@ -15,7 +15,7 @@ import (
 )
 
 // VERSION of tat2es
-const VERSION = "0.5.0"
+const VERSION = "0.6.0"
 
 var mainCmd = &cobra.Command{
 	Use:   "tat2es",
@@ -144,8 +144,8 @@ func init() {
 	flags.String("topics-indexes", "", "/Topic/Sub-Topic1:ES_Index1,/Topic/Sub-Topic2:ES_Index2")
 	viper.BindPFlag("topics_indexes", flags.Lookup("topics-indexes"))
 
-	flags.Int("timestamp", int(time.Now().Unix()), "from: timestamp unix format")
-	viper.BindPFlag("timestamp", flags.Lookup("timestamp"))
+	flags.Int("last-hour-min-creation", 168, "Index all messages since <last-hour-min-creation> hours")
+	viper.BindPFlag("last_hour_min_creation", flags.Lookup("last-hour-min-creation"))
 
 	flags.Int("messages-limit", 50, "messages-limit is used by MessageCriteria.Limit for requesting TAT")
 	viper.BindPFlag("messages_limit", flags.Lookup("messages-limit"))
