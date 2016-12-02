@@ -57,7 +57,6 @@ func (bot *botClient) sendPresencesOnConfs() error {
 				if strings.Contains(p.Value, "@conference.") {
 					sd := strings.Split(p.Value, ";")
 					destination := strings.TrimSpace(sd[0])
-
 					conf := fmt.Sprintf("%s/%s", strings.TrimSpace(destination), resource)
 					bot.sendPresence(conf)
 				}
@@ -65,7 +64,6 @@ func (bot *botClient) sendPresencesOnConfs() error {
 		}
 	}
 	topicConfs = topicConfsNew
-
 	return nil
 }
 
