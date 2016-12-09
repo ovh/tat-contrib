@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/ovh/mail2tat"
 	"github.com/ovh/tat"
 	"github.com/spf13/viper"
 	"github.com/yesnault/go-imap/imap"
@@ -41,7 +40,7 @@ func getTatClient() *tat.Client {
 		URL:      viper.GetString("url_tat_engine"),
 		Username: viper.GetString("username_tat_engine"),
 		Password: viper.GetString("password_tat_engine"),
-		Referer:  "mail2tat.v" + mail2tat.Version,
+		Referer:  VERSION,
 	})
 
 	if err != nil {
