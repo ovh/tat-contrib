@@ -13,7 +13,7 @@ import (
 )
 
 // VERSION is version of tat2xmpp.
-const VERSION = "0.4.0"
+const VERSION = "0.5.0"
 
 var configFile string
 
@@ -82,20 +82,7 @@ var mainCmd = &cobra.Command{
 	},
 }
 
-var versionNewLine bool
-
-// The version command prints this service.
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the version.",
-	Long:  "The version of tat2xmpp.",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(VERSION)
-	},
-}
-
 func init() {
-	mainCmd.AddCommand(versionCmd)
 
 	flags := mainCmd.Flags()
 	flags.Bool("production", false, "Production mode")
@@ -104,7 +91,7 @@ func init() {
 	flags.String("log-level", "", "Log Level : debug, info or warn")
 	viper.BindPFlag("log_level", flags.Lookup("log-level"))
 
-	flags.String("listen-port", "8088", "Listen Port")
+	flags.String("listen-port", "8088", "Tat2XMPP Listen Port")
 	viper.BindPFlag("listen_port", flags.Lookup("listen-port"))
 
 	flags.String("hook-key", "", "Hook Key, for using POST http://<url>/hook endpoint, with Header TAT2XMPPKEY ")

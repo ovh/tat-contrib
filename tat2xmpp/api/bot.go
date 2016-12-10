@@ -24,19 +24,31 @@ type topicConf struct {
 }
 
 var topicConfs []topicConf
+var topicConfsFilterHook []topicConf
 
 func (bot *botClient) born() {
 
 	bot.creation = time.Now().UTC()
 
 	topicConfs = []topicConf{}
+	topicConfsFilterHook = []topicConf{}
 
 	go bot.receive()
 
 	for {
+		sendInitialPresence(bot.XMPPClient)
+		time.Sleep(10 * time.Second)
 		bot.sendPresencesOnConfs()
-		time.Sleep(30 * time.Second)
+		time.Sleep(20 * time.Second)
 	}
+}
+
+func (bot *botClient) renewXMPP() {
+	var err error
+	if bot.XMPPClient, err = getNewXMPPClient(); err != nil {
+		log.Errorf("Error while renew XMPP Client: %s", err.Error())
+	}
+	bot.sendPresencesOnConfs()
 }
 
 func (bot *botClient) sendPresencesOnConfs() error {
@@ -49,21 +61,28 @@ func (bot *botClient) sendPresencesOnConfs() error {
 	for _, t := range topicsJSON.Topics {
 		for _, p := range t.Parameters {
 			if strings.HasPrefix(p.Key, tat.HookTypeXMPP) {
-				topicConfsNew = append(topicConfsNew, topicConf{
-					topic:      t.Topic,
-					conference: p.Value,
-					typeHook:   p.Key,
-				})
 				if strings.Contains(p.Value, "@conference.") {
-					sd := strings.Split(p.Value, ";")
-					destination := strings.TrimSpace(sd[0])
-					conf := fmt.Sprintf("%s/%s", strings.TrimSpace(destination), resource)
-					bot.sendPresence(conf)
+					topicConfsNew = append(topicConfsNew, topicConf{
+						topic:      t.Topic,
+						conference: p.Value,
+						typeHook:   p.Key,
+					})
 				}
 			}
 		}
 	}
+
 	topicConfs = topicConfsNew
+	topicConfs = append(topicConfs, topicConfsFilterHook...)
+
+	for _, t := range topicConfs {
+		sd := strings.Split(t.conference, ";")
+		destination := strings.TrimSpace(sd[0])
+
+		conf := fmt.Sprintf("%s/%s", strings.TrimSpace(destination), resource)
+		bot.sendPresence(conf)
+	}
+
 	return nil
 }
 
@@ -135,6 +154,9 @@ func hookJSON(ctx *gin.Context) {
 	destination := strings.TrimSpace(sd[0])
 	from := ""
 	topic := ""
+
+	log.Debugf("hookJSON> Hook received destination:%s compute: %s", hook.Hook.Destination, destination)
+
 	if len(sd) > 1 {
 		for _, arg := range sd {
 			if strings.HasPrefix(arg, "from:") && len(arg) > len("from:") {
@@ -155,10 +177,18 @@ func hookJSON(ctx *gin.Context) {
 				presenceToSend = false
 			}
 		}
+
 		if presenceToSend {
-			conf := fmt.Sprintf("%s/%s", destination, resource)
-			tatbot.sendPresence(conf)
-			time.Sleep(10 * time.Second)
+			log.Debugf("hookJSON> presenceToSend Add t:%s c:%s t:%s", hook.HookMessage.MessageJSONOut.Message.Topic, destination, hook.Hook.Type)
+			topicConfsFilterHook = append(topicConfsFilterHook, topicConf{
+				topic:      hook.HookMessage.MessageJSONOut.Message.Topic,
+				conference: destination,
+				typeHook:   hook.Hook.Type,
+			})
+
+			log.Warnf("hookJSON> call renew")
+			tatbot.renewXMPP()
+			time.Sleep(120 * time.Second)
 		}
 	}
 
@@ -201,7 +231,8 @@ func hookJSON(ctx *gin.Context) {
 		Text:   text,
 	})
 
-	ctx.JSON(http.StatusCreated, "XMPP Message sent")
+	log.Warnf("hookJSON> XMPP Message type %s sent on %s", typeXMPP, destination)
+	ctx.JSON(http.StatusCreated, fmt.Sprintf("XMPP Message type %s sent on %s", typeXMPP, destination))
 }
 
 func getHeader(ctx *gin.Context, headerName string) string {

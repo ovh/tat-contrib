@@ -59,6 +59,7 @@ func sendInitialPresence(xmppClient *xmpp.Client) error {
 }
 
 func (bot *botClient) sendPresence(to string) {
+	log.Debugf("sendPresence> send to %s", to)
 	presence := xmpp.Presence{
 		From: viper.GetString("xmpp_bot_jid"),
 		To:   to,
