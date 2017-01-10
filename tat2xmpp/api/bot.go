@@ -44,10 +44,6 @@ func (bot *botClient) born() {
 }
 
 func (bot *botClient) renewXMPP() {
-	var err error
-	if bot.XMPPClient, err = getNewXMPPClient(); err != nil {
-		log.Errorf("Error while renew XMPP Client: %s", err.Error())
-	}
 	bot.sendPresencesOnConfs()
 }
 
