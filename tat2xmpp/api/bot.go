@@ -78,9 +78,7 @@ func (bot *botClient) sendPresencesOnConfs() error {
 	for _, t := range topicConfs {
 		sd := strings.Split(t.conference, ";")
 		destination := strings.TrimSpace(sd[0])
-
-		conf := fmt.Sprintf("%s/%s", strings.TrimSpace(destination), resource)
-		bot.sendPresence(conf)
+		bot.XMPPClient.JoinMUCNoHistory(strings.TrimSpace(destination), resource)
 	}
 
 	return nil
