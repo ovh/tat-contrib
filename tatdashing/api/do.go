@@ -102,7 +102,7 @@ func doMessage(msg tat.Message) {
 					}
 					index := tuple[1]
 					label := tuple[2]
-					value := ""
+					var value string
 
 					found = true
 					value = getValue(reply, label)
@@ -218,9 +218,61 @@ func getValue(reply tat.Message, label string) string {
 				continue
 			}
 			out = fmt.Sprintf("%s %s", out, getValueOnTat(strings.Join(tuple[2:], ":")))
+		} else if strings.HasPrefix(tag, fmt.Sprintf("valuelabel:")) {
+			tuple := strings.Split(tag, ":") // #valuelabel:0:label:/Internal/topic?
+			if len(tuple) < 4 {
+				log.Debugf("getValue for label valuelabel:, but invalid format")
+				continue
+			}
+			out = fmt.Sprintf("%s %s", out, getValueLabelOnTat(strings.Join(tuple[3:], ":"), tuple[2:3][0]))
 		}
 	}
 	return strings.TrimSpace(out)
+}
+
+func getValueLabelOnTat(path, label string) string {
+
+	tuple := strings.Split(path, "?")
+	if len(tuple) != 2 {
+		return ""
+	}
+	topic := tuple[0]
+
+	values, err := url.ParseQuery(tuple[1])
+	if err != nil {
+		log.Warnf("Invalid query:%s", path)
+		return "error"
+	}
+
+	criteria, errb := tat.GetMessageCriteriaFromURLValues(values)
+	if errb != nil {
+		return ""
+	}
+
+	criteria.Limit = 2
+	log.Debugf("criteria:%v", criteria)
+	n, errc := getClient().MessageList(topic, criteria)
+	if errc != nil {
+		return "error"
+	}
+
+	if len(n.Messages) != 1 {
+		return "error"
+	}
+
+	nlabel, la, errg := n.Messages[0].GetLabel(label)
+	if errg != nil {
+		return "error"
+	}
+	if nlabel != 1 {
+		return "error nb label"
+	}
+
+	// take value of label
+	if strings.HasPrefix(la.Text, label+":") {
+		return strings.Split(la.Text, ":")[1]
+	}
+	return "error"
 }
 
 func getValueOnTat(path string) string {
