@@ -260,19 +260,19 @@ func getValueLabelOnTat(path, label string) string {
 		return "error != 1"
 	}
 
-	nlabel, la, errg := n.Messages[0].GetLabel(label)
-	if errg != nil {
-		return "error getLabel " + label
+	nlabel := 0
+	var vlabel string
+	for _, cur := range n.Messages[0].Labels {
+		if strings.HasPrefix(cur.Text, label+":") {
+			nlabel++
+			vlabel = cur.Text
+		}
 	}
+
 	if nlabel != 1 {
 		return "error nb label " + label
 	}
-
-	// take value of label
-	if strings.HasPrefix(la.Text, label+":") {
-		return strings.Split(la.Text, ":")[1]
-	}
-	return "error"
+	return strings.Split(vlabel, ":")[1]
 }
 
 func getValueOnTat(path string) string {
