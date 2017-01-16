@@ -211,20 +211,20 @@ func getValue(reply tat.Message, label string) string {
 	sort.Strings(reply.Tags)
 	out := ""
 	for _, tag := range reply.Tags {
-		if strings.HasPrefix(tag, fmt.Sprintf("value:")) {
-			tuple := strings.Split(tag, ":") // #value:0:/Internal/topic?
-			if len(tuple) < 3 {
-				log.Debugf("getValue for label value:, but invalid format")
-				continue
-			}
-			out = fmt.Sprintf("%s %s", out, getValueOnTat(strings.Join(tuple[2:], ":")))
-		} else if strings.HasPrefix(tag, fmt.Sprintf("valuelabel:")) {
+		if strings.HasPrefix(tag, fmt.Sprintf("valuelabel:")) {
 			tuple := strings.Split(tag, ":") // #valuelabel:0:label:/Internal/topic?
 			if len(tuple) < 4 {
 				log.Debugf("getValue for label valuelabel:, but invalid format")
 				continue
 			}
 			out = fmt.Sprintf("%s %s", out, getValueLabelOnTat(strings.Join(tuple[3:], ":"), tuple[2:3][0]))
+		} else if strings.HasPrefix(tag, fmt.Sprintf("value:")) {
+			tuple := strings.Split(tag, ":") // #value:0:/Internal/topic?
+			if len(tuple) < 3 {
+				log.Debugf("getValue for label value:, but invalid format")
+				continue
+			}
+			out = fmt.Sprintf("%s %s", out, getValueOnTat(strings.Join(tuple[2:], ":")))
 		}
 	}
 	return strings.TrimSpace(out)
