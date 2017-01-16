@@ -241,7 +241,7 @@ func getValueLabelOnTat(path, label string) string {
 	values, err := url.ParseQuery(tuple[1])
 	if err != nil {
 		log.Warnf("Invalid query:%s", path)
-		return "error"
+		return "error query"
 	}
 
 	criteria, errb := tat.GetMessageCriteriaFromURLValues(values)
@@ -253,16 +253,16 @@ func getValueLabelOnTat(path, label string) string {
 	log.Debugf("criteria:%v", criteria)
 	n, errc := getClient().MessageList(topic, criteria)
 	if errc != nil {
-		return "error"
+		return "error List"
 	}
 
 	if len(n.Messages) != 1 {
-		return "error"
+		return "error != 1"
 	}
 
 	nlabel, la, errg := n.Messages[0].GetLabel(label)
 	if errg != nil {
-		return "error"
+		return "error getLabel"
 	}
 	if nlabel != 1 {
 		return "error nb label"
