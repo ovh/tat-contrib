@@ -262,10 +262,10 @@ func getValueLabelOnTat(path, label string) string {
 
 	nlabel, la, errg := n.Messages[0].GetLabel(label)
 	if errg != nil {
-		return "error getLabel"
+		return "error getLabel " + label
 	}
 	if nlabel != 1 {
-		return "error nb label"
+		return "error nb label " + label
 	}
 
 	// take value of label
