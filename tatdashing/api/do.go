@@ -78,7 +78,7 @@ func doMessage(msg tat.Message) {
 	labels := []tat.Label{}
 	colorTag := ""
 	bgColorTag := ""
-	var valueItem int64
+	var valueItem float64
 	colorToCompute := false
 	for _, reply := range msg.Replies {
 		found := false
@@ -106,7 +106,7 @@ func doMessage(msg tat.Message) {
 
 					found = true
 					value = getValue(reply, label)
-					if n, err := strconv.ParseInt(value, 10, 64); err == nil {
+					if n, err := strconv.ParseFloat(value, 64); err == nil {
 						valueItem = n
 						colorToCompute = true
 					}
@@ -179,7 +179,7 @@ func doMessage(msg tat.Message) {
 	}
 }
 
-func computeColor(t string, value int64) (string, error) {
+func computeColor(t string, value float64) (string, error) {
 
 	// #label:color:#eeeee:1:2;#fa6800:2:4;
 	// green 93c47d
@@ -191,8 +191,8 @@ func computeColor(t string, value int64) (string, error) {
 		if len(trip) != 3 {
 			continue
 		}
-		if minValue, errMin := strconv.ParseInt(trip[1], 10, 64); errMin == nil {
-			if maxValue, errMax := strconv.ParseInt(trip[2], 10, 64); errMax == nil {
+		if minValue, errMin := strconv.ParseInt(trip[1], 64); errMin == nil {
+			if maxValue, errMax := strconv.ParseInt(trip[2], 64); errMax == nil {
 				if value >= minValue && value <= maxValue {
 					return lastColor, nil
 				}
