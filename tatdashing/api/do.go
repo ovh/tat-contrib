@@ -191,8 +191,8 @@ func computeColor(t string, value float64) (string, error) {
 		if len(trip) != 3 {
 			continue
 		}
-		if minValue, errMin := strconv.ParseInt(trip[1], 64); errMin == nil {
-			if maxValue, errMax := strconv.ParseInt(trip[2], 64); errMax == nil {
+		if minValue, errMin := strconv.ParseFloat(trip[1], 64); errMin == nil {
+			if maxValue, errMax := strconv.ParseFloat(trip[2], 64); errMax == nil {
 				if value >= minValue && value <= maxValue {
 					return lastColor, nil
 				}
