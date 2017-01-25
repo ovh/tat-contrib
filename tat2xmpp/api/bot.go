@@ -129,6 +129,7 @@ func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 				if username != resource && username != viper.GetString("xmpp_bot_jid") && strings.Trim(chat.Text, " ") != "" {
 					text := fmt.Sprintf("#from:%s %s", username, chat.Text)
 					bot.TatClient.MessageAdd(tat.MessageJSON{Text: text, Topic: t.topic})
+					time.Sleep(1 * time.Second)
 				}
 			}
 		}
