@@ -90,7 +90,13 @@ func (bot *botClient) receive() {
 		}
 		switch v := chat.(type) {
 		case xmpp.Chat:
-			log.Debug("Receive msg from xmpp :%+v\n", v)
+			if v.Remote != "" {
+				if v.Type == "error" {
+					log.Errorf("receive> msg error from xmpp :%+v\n", v)
+				} else {
+					log.Debugf("receive> msg from xmpp :%+v\n", v)
+				}
+			}
 			bot.receiveMsg(v)
 
 			/* Code for presence case xmpp.Presence:
