@@ -84,11 +84,13 @@ func (bot *botClient) receive() {
 	for {
 		chat, err := bot.XMPPClient.Recv()
 		if err != nil {
-			log.Errorf("receive >> err: %s", err)
+			if !strings.Contains(err.Error(), "EOF") {
+				log.Errorf("receive >> err: %s", err)
+			}
 		}
 		switch v := chat.(type) {
 		case xmpp.Chat:
-			fmt.Printf("Receive msg from xmpp :%+v\n", v)
+			log.Debug("Receive msg from xmpp :%+v\n", v)
 			bot.receiveMsg(v)
 
 			/* Code for presence case xmpp.Presence:

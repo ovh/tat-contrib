@@ -19,7 +19,7 @@ Some use cases:
 
 Tat Engine exposes only an HTTP REST API.
 You can manipulate this API with Tat Command Line Interface, aka **tatcli**, see
-https://github.com/ovh/tatcli.
+https://github.com/ovh/tat/tatcli.
 
 A **WebUI** is also available, see https://github.com/ovh/tatwebui.
 
@@ -1539,7 +1539,7 @@ with a config file:
  go build && ./mycli-full --configFile $HOME/.tatcli/config.local.json demo /YouTopic/subTopic your message
 
 You should split this file into many files.
-See https://github.com/ovh/tatcli for CLI with many subcommands
+See https://github.com/ovh/tat/tatcli for CLI with many subcommands
 */
 
 import (
