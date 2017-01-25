@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -14,6 +15,7 @@ import (
 )
 
 var tatbot *botClient
+var mutex = &sync.Mutex{}
 
 const resource = "tat"
 
@@ -228,6 +230,8 @@ func hookJSON(ctx *gin.Context) {
 		text = fmt.Sprintf("%s (%s)", text, labelsTxt)
 	}
 
+	mutex.Lock()
+	defer mutex.Unlock()
 	tatbot.XMPPClient.Send(xmpp.Chat{
 		Remote: destination,
 		Type:   typeXMPP,
@@ -236,6 +240,8 @@ func hookJSON(ctx *gin.Context) {
 
 	log.Warnf("hookJSON> XMPP Message type %s sent on %s", typeXMPP, destination)
 	ctx.JSON(http.StatusCreated, fmt.Sprintf("XMPP Message type %s sent on %s", typeXMPP, destination))
+
+	time.Sleep(1 * time.Second)
 }
 
 func getHeader(ctx *gin.Context, headerName string) string {
