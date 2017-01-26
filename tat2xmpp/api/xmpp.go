@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"fmt"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -20,7 +21,7 @@ func helloWorld() {
 	tatbot.XMPPClient.Send(xmpp.Chat{
 		Remote: viper.GetString("xmpp_hello_world"),
 		Type:   "chat",
-		Text:   "Hello from tat2xmpp",
+		Text:   fmt.Sprintf("Hi, I'm tat2xmpp, what a good day to be alive"),
 	})
 }
 

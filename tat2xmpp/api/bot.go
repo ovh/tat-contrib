@@ -214,8 +214,10 @@ func answer(chat xmpp.Chat) {
 }
 
 func prepareAnswer(question, remote string) string {
-	if question == "hi tat, give me tat2xmpp status" {
+	if question == "tat, give me tat2xmpp status" {
 		return getStatus()
+	} else if question == "tat, ping" {
+		return "pong"
 	}
 	return "Hi " + remote
 }
