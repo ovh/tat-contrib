@@ -22,6 +22,7 @@ var (
 	nbXMPPSent             int
 	nbTatErrors            int
 	nbTatSent              int
+	nbXMPPAnswers          int
 	nbRenew                int
 )
 
@@ -55,8 +56,8 @@ func (bot *botClient) born() {
 }
 
 func status() {
-	log.Infof("tat2xmpp-status>> started:%s nbXMPPErrors:%d nbXMPPErrorsAfterRetry:%d nbXMPPSent:%d nbTatErrors:%d nbTatSent:%d renew:%d",
-		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbTatErrors, nbTatSent, nbRenew)
+	log.Infof("tat2xmpp-status>> started:%s nbXMPPErrors:%d nbXMPPErrorsAfterRetry:%d nbXMPPSent:%d nbXMPPAnswers:%d nbTatErrors:%d nbTatSent:%d renew:%d",
+		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbXMPPAnswers, nbTatErrors, nbTatSent, nbRenew)
 	time.Sleep(10 * time.Minute)
 }
 
@@ -202,6 +203,7 @@ func answer(chat xmpp.Chat) {
 		Type:   typeXMPP,
 		Text:   "Hi " + chat.Remote,
 	})
+	nbXMPPAnswers++
 	time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
 }
 
