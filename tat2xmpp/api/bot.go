@@ -198,14 +198,18 @@ func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 func answer(chat xmpp.Chat) {
 
 	typeXMPP := "chat"
+	remote := chat.Remote
 	if strings.Contains(chat.Remote, "@conference.") {
 		typeXMPP = "groupchat"
+		if strings.Contains(chat.Remote, "/") {
+			remote = strings.Split(chat.Remote, "/")[0]
+		}
 	}
 
 	mutex.Lock()
 	defer mutex.Unlock()
 	tatbot.XMPPClient.Send(xmpp.Chat{
-		Remote: chat.Remote,
+		Remote: remote,
 		Type:   typeXMPP,
 		Text:   prepareAnswer(chat.Text, chat.Remote),
 	})
