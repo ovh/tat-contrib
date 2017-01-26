@@ -20,12 +20,14 @@ func initRoutes(router *gin.Engine) {
 			s = http.StatusInternalServerError
 		}
 		ctx.JSON(s, gin.H{
-			"started":      tatbot.creation,
-			"nbXMPPErrors": nbXMPPErrors,
-			"nbXMPPSent":   nbXMPPSent,
-			"nbTatErrors":  nbTatErrors,
-			"nbTatSent":    nbTatSent,
-			"nbRenew":      nbRenew,
+			"started":                tatbot.creation,
+			"nbXMPPErrors":           nbXMPPErrors,
+			"nbXMPPErrorsAfterRetry": nbXMPPErrorsAfterRetry,
+			"nbXMPPSent":             nbXMPPSent,
+			"nbXMPPAnswers":          nbXMPPAnswers,
+			"nbTatErrors":            nbTatErrors,
+			"nbTatSent":              nbTatSent,
+			"nbRenew":                nbRenew,
 		})
 	})
 }
