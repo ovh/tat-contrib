@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"runtime"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -43,7 +44,12 @@ var mainCmd = &cobra.Command{
 			}
 		}
 
-		router := gin.Default()
+		router := gin.New()
+		router.Use(recovery)
+
+		if !viper.GetBool("production") {
+			router.Use(gin.Logger())
+		}
 
 		router.Use(ginrus(log.StandardLogger(), time.RFC3339, true))
 
@@ -179,6 +185,23 @@ func ginrus(l *log.Logger, timeFormat string, utc bool) gin.HandlerFunc {
 			entry.Info(fmt.Sprintf("INFO %s", msg))
 		}
 	}
+}
+
+// recovery is a middleware that recovers from any panics and writes a 500 if there was one.
+func recovery(c *gin.Context) {
+	defer func() {
+		if err := recover(); err != nil {
+			path := c.Request.URL.Path
+			query := c.Request.URL.RawQuery
+			trace := make([]byte, 4096)
+			count := runtime.Stack(trace, true)
+			log.Errorf("[recovery] err:%s method:%s path:%s query:%s stacktrace of %d bytes:%s",
+				err, c.Request.Method, path, query, count, trace)
+
+			c.AbortWithStatus(500)
+		}
+	}()
+	c.Next()
 }
 
 func main() {
