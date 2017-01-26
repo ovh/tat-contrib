@@ -209,6 +209,8 @@ func answer(chat xmpp.Chat) {
 			remote = t[0]
 			to = t[1]
 		}
+	} else {
+		to = strings.Split(chat.Remote, "@")[0]
 	}
 
 	mutex.Lock()
@@ -229,7 +231,7 @@ func prepareAnswer(question, remote string) string {
 		return "pong"
 	} else if strings.HasPrefix(question, "tat, hi") {
 		return "Hi " + remote
-	} else if strings.HasPrefix(question, "tat, yes or not?") {
+	} else if strings.HasPrefix(question, "tat, yes or no?") {
 		if rand.Int()%2 == 0 {
 			return "yes"
 		}
