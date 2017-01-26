@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
@@ -44,6 +45,7 @@ func (bot *botClient) born() {
 
 	topicConfs = []topicConf{}
 	topicConfsFilterHook = []topicConf{}
+	rand.Seed(time.Now().Unix())
 
 	go bot.receive()
 	go status()
@@ -199,10 +201,13 @@ func answer(chat xmpp.Chat) {
 
 	typeXMPP := "chat"
 	remote := chat.Remote
+	to := chat.Remote
 	if strings.Contains(chat.Remote, "@conference.") {
 		typeXMPP = "groupchat"
 		if strings.Contains(chat.Remote, "/") {
-			remote = strings.Split(chat.Remote, "/")[0]
+			t := strings.Split(chat.Remote, "/")
+			remote = t[0]
+			to = t[1]
 		}
 	}
 
@@ -211,7 +216,7 @@ func answer(chat xmpp.Chat) {
 	tatbot.XMPPClient.Send(xmpp.Chat{
 		Remote: remote,
 		Type:   typeXMPP,
-		Text:   prepareAnswer(chat.Text, chat.Remote),
+		Text:   prepareAnswer(chat.Text, to),
 	})
 	nbXMPPAnswers++
 	time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
@@ -222,8 +227,42 @@ func prepareAnswer(question, remote string) string {
 		return getStatus()
 	} else if question == "tat, ping" {
 		return "pong"
+	} else if strings.HasPrefix(question, "tat, hi") {
+		return "Hi " + remote
+	} else if strings.HasPrefix(question, "tat, yes or not?") {
+		if rand.Int()%2 == 0 {
+			return "yes"
+		}
+		return "no"
 	}
-	return "Hi " + remote
+	return random()
+}
+
+func random() string {
+	answers := []string{
+		"It is certain",
+		"It is decidedly so",
+		"Without a doubt",
+		"Yes definitely",
+		"You may rely on it",
+		"As I see it yes",
+		"Most likely",
+		"Outlook good",
+		"Yes",
+		"Signs point to yes",
+		"Reply hazy try again",
+		"Ask again later",
+		"Better not tell you now",
+		"Cannot predict now",
+		"Concentrate and ask again",
+		"Don't count on it",
+		"My reply is no",
+		"My sources say no",
+		"Outlook not so good",
+		"Very doubtful",
+		"Nooooo",
+	}
+	return answers[rand.Intn(len(answers))]
 }
 
 // hookJSON is handler for Tat Webhook HookJSON
