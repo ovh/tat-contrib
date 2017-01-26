@@ -14,8 +14,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-var tatbot *botClient
-var mutex = &sync.Mutex{}
+var (
+	tatbot   *botClient
+	mutex    = &sync.Mutex{}
+	nbErrors int
+	nbOK     int
+)
 
 const resource = "tat"
 
@@ -94,6 +98,7 @@ func (bot *botClient) receive() {
 		case xmpp.Chat:
 			if v.Remote != "" {
 				if v.Type == "error" {
+					nbErrors++
 					log.Errorf("receive> msg error from xmpp :%+v\n", v)
 				} else {
 					log.Debugf("receive> msg from xmpp :%+v\n", v)
@@ -155,6 +160,8 @@ func hookJSON(ctx *gin.Context) {
 		return
 	}
 
+	ctx.JSON(http.StatusCreated, fmt.Sprintf("Message received"))
+
 	sd := strings.Split(hook.Hook.Destination, ";")
 	destination := strings.TrimSpace(sd[0])
 	from := ""
@@ -191,9 +198,9 @@ func hookJSON(ctx *gin.Context) {
 				typeHook:   hook.Hook.Type,
 			})
 
-			log.Warnf("hookJSON> call renew")
+			log.Infof("hookJSON> call renew")
 			tatbot.renewXMPP()
-			time.Sleep(120 * time.Second)
+			time.Sleep(30 * time.Second)
 		}
 	}
 
@@ -237,11 +244,9 @@ func hookJSON(ctx *gin.Context) {
 		Type:   typeXMPP,
 		Text:   text,
 	})
+	nbOK++
 
-	log.Warnf("hookJSON> XMPP Message type %s sent on %s", typeXMPP, destination)
-	ctx.JSON(http.StatusCreated, fmt.Sprintf("XMPP Message type %s sent on %s", typeXMPP, destination))
-
-	time.Sleep(1 * time.Second)
+	time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
 }
 
 func getHeader(ctx *gin.Context, headerName string) string {

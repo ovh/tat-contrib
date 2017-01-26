@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -43,6 +44,8 @@ var mainCmd = &cobra.Command{
 		}
 
 		router := gin.Default()
+
+		router.Use(ginrus(log.StandardLogger(), time.RFC3339, true))
 
 		router.Use(cors.Middleware(cors.Config{
 			Origins:         "*",
@@ -129,8 +132,53 @@ func init() {
 	flags.Bool("xmpp-insecure-skip-verify", true, "XMPP InsecureSkipVerify")
 	viper.BindPFlag("xmpp_insecure_skip_verify", flags.Lookup("xmpp-insecure-skip-verify"))
 
-	mainCmd.PersistentFlags().StringVarP(&configFile, "configFile", "c", "", "configuration file")
+	flags.Int("xmpp-delay", 3, "Delay between two sent messages")
+	viper.BindPFlag("xmpp_delay", flags.Lookup("xmpp-delay"))
 
+	mainCmd.PersistentFlags().StringVarP(&configFile, "configFile", "c", "", "configuration file")
+}
+
+func ginrus(l *log.Logger, timeFormat string, utc bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		query := c.Request.URL.RawQuery
+		c.Next()
+
+		end := time.Now()
+		latency := end.Sub(start)
+		if utc {
+			end = end.UTC()
+		}
+
+		sec := latency.Seconds()
+		ms := int64(latency / time.Millisecond)
+
+		entry := l.WithFields(log.Fields{
+			"status":                  c.Writer.Status(),
+			"method":                  c.Request.Method,
+			"path":                    path,
+			"query":                   query,
+			"ip":                      c.ClientIP(),
+			"latency":                 latency,
+			"latency_nanosecond_int":  latency.Nanoseconds(),
+			"latency_millisecond_int": ms,
+			"latency_second_float":    sec,
+			"user-agent":              c.Request.UserAgent(),
+			"time":                    end.Format(timeFormat),
+		})
+
+		msg := fmt.Sprintf("%d %s %s %fs %dms %dns", c.Writer.Status(), c.Request.Method, path, sec, ms, latency)
+
+		if len(c.Errors) > 0 {
+			// Append error field if this is an erroneous request.
+			entry.Error(fmt.Sprintf("ERROR %s %s", msg, c.Errors.String()))
+		} else if c.Writer.Status() >= 400 {
+			entry.Warn(fmt.Sprintf("WARN %s", msg))
+		} else if path != "/version" {
+			entry.Info(fmt.Sprintf("INFO %s", msg))
+		}
+	}
 }
 
 func main() {
