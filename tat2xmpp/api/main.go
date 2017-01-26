@@ -26,7 +26,7 @@ var mainCmd = &cobra.Command{
 		viper.AutomaticEnv()
 
 		if viper.GetBool("production") {
-			log.SetLevel(log.WarnLevel)
+			log.SetLevel(log.InfoLevel)
 			log.Info("Set Production Mode ON")
 			gin.SetMode(gin.ReleaseMode)
 		} else {
@@ -138,7 +138,7 @@ func init() {
 	flags.Bool("xmpp-insecure-skip-verify", true, "XMPP InsecureSkipVerify")
 	viper.BindPFlag("xmpp_insecure_skip_verify", flags.Lookup("xmpp-insecure-skip-verify"))
 
-	flags.Int("xmpp-delay", 3, "Delay between two sent messages")
+	flags.Int("xmpp-delay", 5, "Delay between two sent messages")
 	viper.BindPFlag("xmpp_delay", flags.Lookup("xmpp-delay"))
 
 	mainCmd.PersistentFlags().StringVarP(&configFile, "configFile", "c", "", "configuration file")

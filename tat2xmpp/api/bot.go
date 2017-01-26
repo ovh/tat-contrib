@@ -15,10 +15,14 @@ import (
 )
 
 var (
-	tatbot   *botClient
-	mutex    = &sync.Mutex{}
-	nbErrors int
-	nbOK     int
+	tatbot                 *botClient
+	mutex                  = &sync.Mutex{}
+	nbXMPPErrors           int
+	nbXMPPErrorsAfterRetry int
+	nbXMPPSent             int
+	nbTatErrors            int
+	nbTatSent              int
+	nbRenew                int
 )
 
 const resource = "tat"
@@ -40,6 +44,7 @@ func (bot *botClient) born() {
 	topicConfsFilterHook = []topicConf{}
 
 	go bot.receive()
+	go status()
 
 	for {
 		sendInitialPresence(bot.XMPPClient)
@@ -49,7 +54,14 @@ func (bot *botClient) born() {
 	}
 }
 
+func status() {
+	log.Infof("tat2xmpp-status>> started:%s nbXMPPErrors:%d nbXMPPErrorsAfterRetry:%d nbXMPPSent:%d nbTatErrors:%d nbTatSent:%d renew:%d",
+		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbTatErrors, nbTatSent, nbRenew)
+	time.Sleep(10 * time.Minute)
+}
+
 func (bot *botClient) renewXMPP() {
+	nbRenew++
 	bot.sendPresencesOnConfs()
 }
 
@@ -94,17 +106,39 @@ func (bot *botClient) receive() {
 				log.Errorf("receive >> err: %s", err)
 			}
 		}
+		isError := false
 		switch v := chat.(type) {
 		case xmpp.Chat:
 			if v.Remote != "" {
 				if v.Type == "error" {
-					nbErrors++
+					nbXMPPErrors++
+					isError = true
 					log.Errorf("receive> msg error from xmpp :%+v\n", v)
+
+					if !strings.HasSuffix(v.Text, " [tat2xmppRetry]") {
+						typeXMPP := "chat"
+						if strings.Contains(v.Remote, "@conference.") {
+							typeXMPP = "groupchat"
+						}
+						mutex.Lock()
+						tatbot.XMPPClient.Send(xmpp.Chat{
+							Remote: v.Remote,
+							Type:   typeXMPP,
+							Text:   v.Text + " [tat2xmppRetry]",
+						})
+						time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
+						mutex.Unlock()
+					} else {
+						nbXMPPErrorsAfterRetry++
+					}
 				} else {
 					log.Debugf("receive> msg from xmpp :%+v\n", v)
 				}
 			}
-			bot.receiveMsg(v)
+
+			if !isError {
+				bot.receiveMsg(v)
+			}
 
 			/* Code for presence case xmpp.Presence:
 			fmt.Printf("Receive pres from jabb :%s\n", v)
@@ -135,7 +169,12 @@ func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 				// if jid send msg on tat, do not resend on tat
 				if username != resource && username != viper.GetString("xmpp_bot_jid") && strings.Trim(chat.Text, " ") != "" {
 					text := fmt.Sprintf("#from:%s %s", username, chat.Text)
-					bot.TatClient.MessageAdd(tat.MessageJSON{Text: text, Topic: t.topic})
+					if _, err := bot.TatClient.MessageAdd(tat.MessageJSON{Text: text, Topic: t.topic}); err != nil {
+						log.Errorf("Error while send message on tat:%s", err)
+						nbTatErrors++
+					} else {
+						nbTatSent++
+					}
 					time.Sleep(1 * time.Second)
 				}
 			}
@@ -162,6 +201,10 @@ func hookJSON(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, fmt.Sprintf("Message received"))
 
+	go hookProcess(hook)
+}
+
+func hookProcess(hook tat.HookJSON) {
 	sd := strings.Split(hook.Hook.Destination, ";")
 	destination := strings.TrimSpace(sd[0])
 	from := ""
@@ -198,7 +241,6 @@ func hookJSON(ctx *gin.Context) {
 				typeHook:   hook.Hook.Type,
 			})
 
-			log.Infof("hookJSON> call renew")
 			tatbot.renewXMPP()
 			time.Sleep(30 * time.Second)
 		}
@@ -244,8 +286,7 @@ func hookJSON(ctx *gin.Context) {
 		Type:   typeXMPP,
 		Text:   text,
 	})
-	nbOK++
-
+	nbXMPPSent++
 	time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
 }
 
