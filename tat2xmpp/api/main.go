@@ -84,6 +84,8 @@ var mainCmd = &cobra.Command{
 		}
 		go tatbot.born()
 
+		helloWorld()
+
 		if err := s.ListenAndServe(); err != nil {
 			log.Errorf("Error while running ListenAndServe: %s", err.Error())
 		}
@@ -122,6 +124,9 @@ func init() {
 
 	flags.String("xmpp-bot-password", "", "XMPP Bot Password")
 	viper.BindPFlag("xmpp_bot_password", flags.Lookup("xmpp-bot-password"))
+
+	flags.String("xmpp-hello-world", "", "Sending Hello World message to this jabber id")
+	viper.BindPFlag("xmpp_hello_world", flags.Lookup("xmpp-hello-world"))
 
 	flags.Bool("xmpp-debug", false, "XMPP Debug")
 	viper.BindPFlag("xmpp_debug", flags.Lookup("xmpp-debug"))

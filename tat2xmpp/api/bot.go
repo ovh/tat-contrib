@@ -160,6 +160,12 @@ func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 		log.Debugf("receiveMsg >> exit, bot is starting... ")
 		return
 	}
+
+	if strings.HasPrefix(chat.Text, "tat, ") {
+		log.Infof("receiveMsg for tat bot >> %s from remote:%s stamp:%s", chat.Text, chat.Remote, chat.Stamp)
+		answer(chat)
+	}
+
 	for _, t := range topicConfs {
 		if t.typeHook != tat.HookTypeXMPPOut {
 			log.Debugf("receiveMsg >> Check %s ", t.conference)
@@ -180,6 +186,23 @@ func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 			}
 		}
 	}
+}
+
+func answer(chat xmpp.Chat) {
+
+	typeXMPP := "chat"
+	if strings.Contains(chat.Remote, "@conference.") {
+		typeXMPP = "groupchat"
+	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+	tatbot.XMPPClient.Send(xmpp.Chat{
+		Remote: chat.Remote,
+		Type:   typeXMPP,
+		Text:   "Hi " + chat.Remote,
+	})
+	time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
 }
 
 // hookJSON is handler for Tat Webhook HookJSON

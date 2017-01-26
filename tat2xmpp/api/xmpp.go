@@ -9,6 +9,21 @@ import (
 	"github.com/spf13/viper"
 )
 
+func helloWorld() {
+	if viper.GetString("xmpp_hello_world") == "" {
+		log.Infof("helloWorld >> param xmpp-hello-world is empty")
+		return
+	}
+
+	log.Infof("helloWorld >> sending hello world to %s", viper.GetString("xmpp_hello_world"))
+
+	tatbot.XMPPClient.Send(xmpp.Chat{
+		Remote: viper.GetString("xmpp_hello_world"),
+		Type:   "chat",
+		Text:   "Hello from tat2xmpp",
+	})
+}
+
 func serverName(host string) string {
 	return strings.Split(host, ":")[0]
 }
@@ -33,7 +48,7 @@ func getNewXMPPClient() (*xmpp.Client, error) {
 	xmppClient, err := options.NewClient()
 
 	if err != nil {
-		log.Errorf("getClient >> NewClient XMPP, err:%s", err)
+		log.Panicf("getClient >> NewClient XMPP, err:%s", err)
 		return nil, err
 	}
 
@@ -48,7 +63,7 @@ func getNewXMPPClient() (*xmpp.Client, error) {
 // (signalling that it is meant to be broadcasted by the server on behalf of the client) and
 // (2) MUST possess no 'type' attribute (signalling the user's availability).
 func sendInitialPresence(xmppClient *xmpp.Client) error {
-	log.Infof("Sending initial Presence")
+	log.Debugf("Sending initial Presence")
 	presence := xmpp.Presence{From: viper.GetString("xmpp_bot_jid")}
 	_, err := xmppClient.SendPresence(presence)
 	if err != nil {
