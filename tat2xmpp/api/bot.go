@@ -24,6 +24,7 @@ var (
 	nbTatSent              int
 	nbXMPPAnswers          int
 	nbRenew                int
+	nbTopicConfs           int
 )
 
 const resource = "tat"
@@ -55,9 +56,13 @@ func (bot *botClient) born() {
 	}
 }
 
+func getStatus() string {
+	return fmt.Sprintf("tat2xmpp-status>> started:%s nbXMPPErrors:%d nbXMPPErrorsAfterRetry:%d nbXMPPSent:%d nbXMPPAnswers:%d nbTatErrors:%d nbTatSent:%d nbTopicConfs:%d nbTopicConfsFilterHook:%d renew:%d",
+		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbXMPPAnswers, nbTatErrors, nbTatSent, nbTopicConfs, len(topicConfsFilterHook), nbRenew)
+}
+
 func status() {
-	log.Infof("tat2xmpp-status>> started:%s nbXMPPErrors:%d nbXMPPErrorsAfterRetry:%d nbXMPPSent:%d nbXMPPAnswers:%d nbTatErrors:%d nbTatSent:%d renew:%d",
-		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbXMPPAnswers, nbTatErrors, nbTatSent, nbRenew)
+	log.Infof(getStatus())
 	time.Sleep(10 * time.Minute)
 }
 
@@ -87,6 +92,7 @@ func (bot *botClient) sendPresencesOnConfs() error {
 		}
 	}
 
+	nbTopicConfs = len(topicConfsNew)
 	topicConfs = topicConfsNew
 	topicConfs = append(topicConfs, topicConfsFilterHook...)
 
@@ -201,10 +207,17 @@ func answer(chat xmpp.Chat) {
 	tatbot.XMPPClient.Send(xmpp.Chat{
 		Remote: chat.Remote,
 		Type:   typeXMPP,
-		Text:   "Hi " + chat.Remote,
+		Text:   prepareAnswer(chat.Text, chat.Remote),
 	})
 	nbXMPPAnswers++
 	time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
+}
+
+func prepareAnswer(question, remote string) string {
+	if question == "hi tat, give me tat2xmpp status" {
+		return getStatus()
+	}
+	return "Hi " + remote
 }
 
 // hookJSON is handler for Tat Webhook HookJSON
