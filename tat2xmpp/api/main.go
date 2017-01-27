@@ -14,7 +14,7 @@ import (
 )
 
 // VERSION is version of tat2xmpp.
-const VERSION = "0.5.0"
+const VERSION = "0.6.0"
 
 var configFile string
 
@@ -83,8 +83,6 @@ var mainCmd = &cobra.Command{
 			log.Fatalf("Error while initialize client err:%s", err)
 		}
 		go tatbot.born()
-
-		helloWorld()
 
 		if err := s.ListenAndServe(); err != nil {
 			log.Errorf("Error while running ListenAndServe: %s", err.Error())

@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -17,7 +16,6 @@ import (
 
 var (
 	tatbot                 *botClient
-	mutex                  = &sync.Mutex{}
 	nbXMPPErrors           int
 	nbXMPPErrorsAfterRetry int
 	nbXMPPSent             int
@@ -26,6 +24,7 @@ var (
 	nbXMPPAnswers          int
 	nbRenew                int
 	nbTopicConfs           int
+	chats                  chan xmpp.Chat
 )
 
 const resource = "tat"
@@ -47,6 +46,11 @@ func (bot *botClient) born() {
 	topicConfsFilterHook = []topicConf{}
 	rand.Seed(time.Now().Unix())
 
+	chats = make(chan xmpp.Chat)
+	go bot.sendToXMPP()
+
+	bot.helloWorld()
+
 	go bot.receive()
 	go status()
 
@@ -55,6 +59,21 @@ func (bot *botClient) born() {
 		time.Sleep(10 * time.Second)
 		bot.sendPresencesOnConfs()
 		time.Sleep(20 * time.Second)
+	}
+}
+
+func (bot *botClient) helloWorld() {
+	if viper.GetString("xmpp_hello_world") == "" {
+		log.Infof("helloWorld >> param xmpp-hello-world is empty")
+		return
+	}
+
+	log.Infof("helloWorld >> sending hello world to %s", viper.GetString("xmpp_hello_world"))
+
+	chats <- xmpp.Chat{
+		Remote: viper.GetString("xmpp_hello_world"),
+		Type:   "chat",
+		Text:   fmt.Sprintf("Hi, I'm tat2xmpp, what a good day to be alive"),
 	}
 }
 
@@ -107,6 +126,13 @@ func (bot *botClient) sendPresencesOnConfs() error {
 	return nil
 }
 
+func (bot *botClient) sendToXMPP() {
+	for {
+		tatbot.XMPPClient.Send(<-chats)
+		time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
+	}
+}
+
 func (bot *botClient) receive() {
 	for {
 		chat, err := bot.XMPPClient.Recv()
@@ -120,23 +146,13 @@ func (bot *botClient) receive() {
 		case xmpp.Chat:
 			if v.Remote != "" {
 				if v.Type == "error" {
-					nbXMPPErrors++
+
 					isError = true
 					log.Errorf("receive> msg error from xmpp :%+v\n", v)
 
 					if !strings.HasSuffix(v.Text, " [tat2xmppRetry]") {
-						typeXMPP := "chat"
-						if strings.Contains(v.Remote, "@conference.") {
-							typeXMPP = "groupchat"
-						}
-						mutex.Lock()
-						tatbot.XMPPClient.Send(xmpp.Chat{
-							Remote: v.Remote,
-							Type:   typeXMPP,
-							Text:   v.Text + " [tat2xmppRetry]",
-						})
-						time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
-						mutex.Unlock()
+						nbXMPPErrors++
+						go tatbot.sendRetry(v)
 					} else {
 						nbXMPPErrorsAfterRetry++
 					}
@@ -155,6 +171,22 @@ func (bot *botClient) receive() {
 			*/
 		}
 	}
+}
+
+func (bot *botClient) sendRetry(v xmpp.Chat) {
+	time.Sleep(60 * time.Second)
+	chats <- xmpp.Chat{
+		Remote: v.Remote,
+		Type:   getTypeChat(v.Remote),
+		Text:   v.Text + " [tat2xmppRetry]",
+	}
+}
+
+func getTypeChat(s string) string {
+	if strings.Contains(s, "@conference.") {
+		return "groupchat"
+	}
+	return "chat"
 }
 
 func (bot *botClient) receiveMsg(chat xmpp.Chat) {
@@ -199,11 +231,10 @@ func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 
 func answer(chat xmpp.Chat) {
 
-	typeXMPP := "chat"
+	typeXMPP := getTypeChat(chat.Remote)
 	remote := chat.Remote
 	to := chat.Remote
-	if strings.Contains(chat.Remote, "@conference.") {
-		typeXMPP = "groupchat"
+	if typeXMPP == "groupchat" {
 		if strings.Contains(chat.Remote, "/") {
 			t := strings.Split(chat.Remote, "/")
 			remote = t[0]
@@ -213,15 +244,12 @@ func answer(chat xmpp.Chat) {
 		to = strings.Split(chat.Remote, "@")[0]
 	}
 
-	mutex.Lock()
-	defer mutex.Unlock()
-	tatbot.XMPPClient.Send(xmpp.Chat{
+	chats <- xmpp.Chat{
 		Remote: remote,
 		Type:   typeXMPP,
 		Text:   prepareAnswer(chat.Text, to),
-	})
+	}
 	nbXMPPAnswers++
-	time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
 }
 
 func prepareAnswer(question, remote string) string {
@@ -307,10 +335,8 @@ func hookProcess(hook tat.HookJSON) {
 		}
 	}
 
-	typeXMPP := "chat"
-	if strings.Contains(destination, "@conference.") {
-		typeXMPP = "groupchat"
-
+	typeXMPP := getTypeChat(destination)
+	if typeXMPP == "groupchat" {
 		presenceToSend := true
 		for _, c := range topicConfs {
 			if strings.HasPrefix(c.conference, destination) {
@@ -364,15 +390,12 @@ func hookProcess(hook tat.HookJSON) {
 		text = fmt.Sprintf("%s (%s)", text, labelsTxt)
 	}
 
-	mutex.Lock()
-	defer mutex.Unlock()
-	tatbot.XMPPClient.Send(xmpp.Chat{
+	chats <- xmpp.Chat{
 		Remote: destination,
 		Type:   typeXMPP,
 		Text:   text,
-	})
+	}
 	nbXMPPSent++
-	time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
 }
 
 func getHeader(ctx *gin.Context, headerName string) string {

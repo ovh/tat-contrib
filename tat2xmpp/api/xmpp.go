@@ -2,28 +2,12 @@ package main
 
 import (
 	"crypto/tls"
-	"fmt"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/mattn/go-xmpp"
 	"github.com/spf13/viper"
 )
-
-func helloWorld() {
-	if viper.GetString("xmpp_hello_world") == "" {
-		log.Infof("helloWorld >> param xmpp-hello-world is empty")
-		return
-	}
-
-	log.Infof("helloWorld >> sending hello world to %s", viper.GetString("xmpp_hello_world"))
-
-	tatbot.XMPPClient.Send(xmpp.Chat{
-		Remote: viper.GetString("xmpp_hello_world"),
-		Type:   "chat",
-		Text:   fmt.Sprintf("Hi, I'm tat2xmpp, what a good day to be alive"),
-	})
-}
 
 func serverName(host string) string {
 	return strings.Split(host, ":")[0]
