@@ -108,7 +108,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 	topic := tuple[1]
 	var values url.Values
 	if strings.Contains(topic, "?") {
-		tuple2 := strings.Split(in, "?")
+		tuple2 := strings.Split(topic, "?")
 		if len(tuple2) != 2 {
 			return "invalid request. Request have to contains ?, example COUNT"
 		}
