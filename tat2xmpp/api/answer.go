@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/mattn/go-xmpp"
 
 	"github.com/ovh/tat"
@@ -43,7 +44,7 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 		}
 		return short + ": forbidden for you " + remote
 	} else if strings.HasPrefix(question, "GET ") || strings.HasPrefix(question, "COUNT ") {
-		return bot.requestTat(question)
+		return bot.requestTat(question, remote)
 	} else if question == "ping" {
 		return short + ": pong"
 	} else if strings.HasPrefix(question, "hi") {
@@ -93,7 +94,7 @@ func random() string {
 	return answers[rand.Intn(len(answers))]
 }
 
-func (bot *botClient) requestTat(in string) string {
+func (bot *botClient) requestTat(in, remote string) string {
 	help := "invalid request prefix. Use COUNT or GET. Example COUNT /YourTopic?tag=foo"
 	if !strings.HasPrefix(in, "COUNT ") && !strings.HasPrefix(in, "GET ") {
 		return help
@@ -115,6 +116,7 @@ func (bot *botClient) requestTat(in string) string {
 		var errv error
 		values, errv = url.ParseQuery(tuple2[1])
 		if errv != nil {
+			log.Warnf("Invalid Query for %s :%s", remote, errv)
 			return "Invalid Query"
 		}
 	}
@@ -126,6 +128,7 @@ func (bot *botClient) requestTat(in string) string {
 
 	out, errc := bot.TatClient.MessageCount(topic, criteria)
 	if errc != nil {
+		log.Warnf("Error requesting tat (count) for %s :%s", remote, errc)
 		return "Error while requesting tat (count)"
 	}
 
@@ -137,6 +140,7 @@ func (bot *botClient) requestTat(in string) string {
 	criteria.Limit = 5
 	outmsg, errc := bot.TatClient.MessageList(topic, criteria)
 	if errc != nil {
+		log.Warnf("Error requesting tat (list) for %s :%s", remote, errc)
 		return "Error while requesting tat: %s" + errc.Error()
 	}
 

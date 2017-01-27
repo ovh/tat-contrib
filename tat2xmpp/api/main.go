@@ -86,6 +86,7 @@ var mainCmd = &cobra.Command{
 		}
 
 		admins = strings.Split(viper.GetString("admin_tat2xmpp"), ",")
+		log.Infof("admin configured:%+v", admins)
 
 		go tatbot.born()
 
