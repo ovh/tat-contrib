@@ -7,11 +7,16 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/jinzhu/now"
 )
 
 const (
 	// DefaultMessageMaxSize is max size of message, can be overrided by topic
 	DefaultMessageMaxSize = 140
+	// DefaultMessageMaxReplies is max number of replies on a message, can be overrided by topic
+	DefaultMessageMaxReplies = 30
 
 	// True in url http way -> string
 	True = "true"
@@ -46,8 +51,10 @@ const (
 	MessageActionUnvoteup = "unvoteup"
 	// MessageActionUnvotedown for tedown action on a message
 	MessageActionUnvotedown = "unvotedown"
-	// MessageActionRelabel for elabel action on a message
+	// MessageActionRelabel for relabel action on a message
 	MessageActionRelabel = "relabel"
+	// MessageActionRelabelOrCreate for relabeloradd action on a message
+	MessageActionRelabelOrCreate = "relabelorcreate"
 	// MessageActionConcat for concat action on a message
 	MessageActionConcat = "concat"
 	// MessageActionMove for move action on a message
@@ -96,37 +103,55 @@ type Message struct {
 
 // MessageCriteria are used to list messages
 type MessageCriteria struct {
-	Skip                int
-	Limit               int
-	TreeView            string
-	IDMessage           string
-	InReplyOfID         string
-	InReplyOfIDRoot     string
-	AllIDMessage        string // search in IDMessage OR InReplyOfID OR InReplyOfIDRoot
-	Text                string
-	Topic               string
-	Label               string `bson:"label" json:"label,omitempty"`
-	NotLabel            string `bson:"notLabel" json:"notLabel,omitempty"`
-	AndLabel            string `bson:"andLabel" json:"andLabel,omitempty"`
-	Tag                 string `bson:"tag" json:"tag,omitempty"`
-	NotTag              string `bson:"notTag" json:"notTag,omitempty"`
-	AndTag              string `bson:"andTag" json:"andTag,omitempty"`
-	Username            string `bson:"username" json:"username,omitempty"`
-	DateMinCreation     string
-	DateMaxCreation     string
-	DateMinUpdate       string
-	DateMaxUpdate       string
-	LimitMinNbReplies   string
-	LimitMaxNbReplies   string
-	LimitMinNbVotesUP   string
-	LimitMinNbVotesDown string
-	LimitMaxNbVotesUP   string
-	LimitMaxNbVotesDown string
-	OnlyMsgRoot         string `bson:"onlyMsgRoot" json:"onlyMsgRoot,omitempty"`
-	OnlyCount           string
+	Skip                    int
+	Limit                   int
+	TreeView                string
+	IDMessage               string
+	InReplyOfID             string
+	InReplyOfIDRoot         string
+	AllIDMessage            string // search in IDMessage OR InReplyOfID OR InReplyOfIDRoot
+	Text                    string
+	Topic                   string
+	Label                   string `bson:"label" json:"label,omitempty"`
+	StartLabel              string `bson:"startLabel" json:"startLabel,omitempty"`
+	NotLabel                string `bson:"notLabel" json:"notLabel,omitempty"`
+	AndLabel                string `bson:"andLabel" json:"andLabel,omitempty"`
+	Tag                     string `bson:"tag" json:"tag,omitempty"`
+	StartTag                string `bson:"startTag" json:"startTag,omitempty"`
+	NotTag                  string `bson:"notTag" json:"notTag,omitempty"`
+	AndTag                  string `bson:"andTag" json:"andTag,omitempty"`
+	Username                string `bson:"username" json:"username,omitempty"`
+	DateMinCreation         string
+	DateMaxCreation         string
+	DateMinUpdate           string
+	DateMaxUpdate           string
+	LastMinCreation         string
+	LastMaxCreation         string
+	LastMinUpdate           string
+	LastMaxUpdate           string
+	LastHourMinCreation     string
+	LastHourMaxCreation     string
+	LastHourMinUpdate       string
+	LastHourMaxUpdate       string
+	DateRefCreation         string
+	DateRefDeltaMinCreation string
+	DateRefDeltaMaxCreation string
+	DateRefUpdate           string
+	DateRefDeltaMinUpdate   string
+	DateRefDeltaMaxUpdate   string
+	LimitMinNbReplies       string
+	LimitMaxNbReplies       string
+	LimitMinNbVotesUP       string
+	LimitMinNbVotesDown     string
+	LimitMaxNbVotesUP       string
+	LimitMaxNbVotesDown     string
+	OnlyMsgRoot             string `bson:"onlyMsgRoot" json:"onlyMsgRoot,omitempty"`
+	OnlyMsgReply            string `bson:"onlyMsgReply" json:"onlyMsgReply,omitempty"`
+	OnlyCount               string
+	SortBy                  string `bson:"sortBy" json:"sortBy"`
 }
 
-// CacheKey returns cacke key value
+// CacheKey returns cache key value
 func (m *MessageCriteria) CacheKey() []string {
 	s := []string{}
 	if m == nil {
@@ -162,6 +187,9 @@ func (m *MessageCriteria) CacheKey() []string {
 	if m.Label != "" {
 		s = append(s, "Label="+m.Label)
 	}
+	if m.StartLabel != "" {
+		s = append(s, "StartLabel="+m.StartLabel)
+	}
 	if m.NotLabel != "" {
 		s = append(s, "NotLabel="+m.NotLabel)
 	}
@@ -170,6 +198,9 @@ func (m *MessageCriteria) CacheKey() []string {
 	}
 	if m.Tag != "" {
 		s = append(s, "Tag="+m.Tag)
+	}
+	if m.StartTag != "" {
+		s = append(s, "StartTag="+m.StartTag)
 	}
 	if m.NotTag != "" {
 		s = append(s, "NotTag="+m.NotTag)
@@ -183,9 +214,6 @@ func (m *MessageCriteria) CacheKey() []string {
 	if m.DateMinCreation != "" {
 		s = append(s, "DateMinCreation="+m.DateMinCreation)
 	}
-	if m.DateMinCreation != "" {
-		s = append(s, "DateMinCreation="+m.DateMinCreation)
-	}
 	if m.DateMaxCreation != "" {
 		s = append(s, "DateMaxCreation="+m.DateMaxCreation)
 	}
@@ -194,6 +222,30 @@ func (m *MessageCriteria) CacheKey() []string {
 	}
 	if m.DateMaxUpdate != "" {
 		s = append(s, "DateMaxUpdate="+m.DateMaxUpdate)
+	}
+	if m.LastMinCreation != "" {
+		s = append(s, "LastMinCreation="+m.LastMinCreation)
+	}
+	if m.LastMaxCreation != "" {
+		s = append(s, "LastMaxCreation="+m.LastMaxCreation)
+	}
+	if m.LastMinUpdate != "" {
+		s = append(s, "LastMinUpdate="+m.LastMinUpdate)
+	}
+	if m.LastMaxUpdate != "" {
+		s = append(s, "LastMaxUpdate="+m.LastMaxUpdate)
+	}
+	if m.LastHourMinCreation != "" {
+		s = append(s, "LastHourMinCreation="+m.LastHourMinCreation)
+	}
+	if m.LastHourMaxCreation != "" {
+		s = append(s, "LastHourMaxCreation="+m.LastHourMaxCreation)
+	}
+	if m.LastHourMinUpdate != "" {
+		s = append(s, "LastHourMinUpdate="+m.LastHourMinUpdate)
+	}
+	if m.LastHourMaxUpdate != "" {
+		s = append(s, "LastHourMaxUpdate="+m.LastHourMaxUpdate)
 	}
 	if m.LimitMinNbReplies != "" {
 		s = append(s, "LimitMinNbReplies="+m.LimitMinNbReplies)
@@ -213,14 +265,46 @@ func (m *MessageCriteria) CacheKey() []string {
 	if m.LimitMaxNbVotesDown != "" {
 		s = append(s, "LimitMaxNbVotesDown="+m.LimitMaxNbVotesDown)
 	}
+	if m.DateRefCreation != "" {
+		s = append(s, "DateRefCreation="+m.DateRefCreation)
+	}
+	if m.DateRefDeltaMinCreation != "" {
+		s = append(s, "DateRefDeltaMinCreation="+m.DateRefDeltaMinCreation)
+	}
+	if m.DateRefDeltaMaxCreation != "" {
+		s = append(s, "DateRefDeltaMaxCreation="+m.DateRefDeltaMaxCreation)
+	}
+	if m.DateRefUpdate != "" {
+		s = append(s, "DateRefUpdate="+m.DateRefUpdate)
+	}
+	if m.DateRefDeltaMinUpdate != "" {
+		s = append(s, "DateRefDeltaMinUpdate="+m.DateRefDeltaMinUpdate)
+	}
+	if m.DateRefDeltaMaxUpdate != "" {
+		s = append(s, "DateRefDeltaMaxUpdate="+m.DateRefDeltaMaxUpdate)
+	}
 	if m.OnlyMsgRoot != "" {
 		s = append(s, "OnlyMsgRoot="+m.OnlyMsgRoot)
+	}
+	if m.OnlyMsgReply != "" {
+		s = append(s, "OnlyMsgReply="+m.OnlyMsgReply)
 	}
 	if m.OnlyCount != "" {
 		s = append(s, "OnlyCount="+m.OnlyCount)
 	}
-
+	if m.SortBy != "" {
+		s = append(s, "SortBy="+m.SortBy)
+	}
 	return s
+}
+
+// MessageReferenceJSON is used for and action On A Existing Message
+type MessageReferenceJSON struct {
+	TagReference        string `json:"tagReference"`
+	StartTagReference   string `json:"startTagReference"`
+	LabelReference      string `json:"labelReference"`
+	StartLabelReference string `json:"startLabelReference"`
+	IDReference         string `json:"idReference"`
 }
 
 // MessagesJSON represents a message and information if current topic is RW
@@ -247,17 +331,22 @@ type MessagesJSONIn struct {
 
 // MessageJSON represents a message with action on it
 type MessageJSON struct {
-	ID           string `json:"_id"`
-	Text         string `json:"text"`
-	Option       string `json:"option"`
-	Topic        string
-	IDReference  string        `json:"idReference"`
-	Action       string        `json:"action"`
-	DateCreation float64       `json:"dateCreation"`
-	Labels       []Label       `json:"labels"`
-	Options      []string      `json:"options"`
-	Replies      []string      `json:"replies"`
-	Messages     []MessageJSON `json:"messages"` // same as replies, but with Labels...
+	ID                  string `json:"_id"`
+	Text                string `json:"text"`
+	Option              string `json:"option"`
+	Topic               string
+	IDReference         string        `json:"idReference"`
+	StartTagReference   string        `json:"startTagReference"`
+	StartLabelReference string        `json:"startLabelReference"`
+	TagReference        string        `json:"tagReference"`
+	LabelReference      string        `json:"labelReference"`
+	OnlyRootReference   string        `json:"onlyRootReference"`
+	Action              string        `json:"action"`
+	DateCreation        float64       `json:"dateCreation"`
+	Labels              []Label       `json:"labels"`
+	Options             []string      `json:"options"`
+	Replies             []string      `json:"replies"`
+	Messages            []MessageJSON `json:"messages"` // same as replies, but with Labels...
 }
 
 // MessageAdd post a tat message
@@ -566,6 +655,30 @@ func (c *Client) MessageRelabel(topic, idMessage string, labels []Label, options
 	return c.processForMessageJSONOut("PUT", "/message"+message.Topic, 201, message)
 }
 
+// MessageRelabelOrCreate removes all labels and add new ones to a message if message exists, create message otherwise
+//  msg := tat.MessageJSON{
+//    Text:         "a text with a #tag",
+//    Labels:       []tat.Label{{Text:"textLabel", Color:"red"}},
+//    TagReference: "a #tag",
+//    Topic:        "/Internal/YourTopic",
+//  }
+//  if _, err := getClient().MessageRelabelOrCreate(msg); err != nil {
+//    return fmt.Errorf("Error while MessageAdd:%s", err)
+//  }
+func (c *Client) MessageRelabelOrCreate(msg MessageJSON) (*MessageJSONOut, error) {
+	if c == nil {
+		return nil, ErrClientNotInitiliazed
+	}
+
+	if msg.Topic == "" {
+		return nil, fmt.Errorf("A message must have a Topic")
+	}
+
+	msg.Action = MessageActionRelabelOrCreate
+
+	return c.processForMessageJSONOut("PUT", "/message"+msg.Topic, 201, msg)
+}
+
 func (c *Client) processForMessageJSONOutBytes(method, path string, want int, message MessageJSON) ([]byte, error) {
 	b, err := json.Marshal(message)
 	if err != nil {
@@ -582,7 +695,6 @@ func (c *Client) processForMessageJSONOutBytes(method, path string, want int, me
 }
 
 func (c *Client) processForMessageJSONOut(method, path string, want int, message MessageJSON) (*MessageJSONOut, error) {
-
 	body, err := c.processForMessageJSONOutBytes(method, path, want, message)
 	if err != nil {
 		return nil, err
@@ -591,7 +703,6 @@ func (c *Client) processForMessageJSONOut(method, path string, want int, message
 	if err := json.Unmarshal(body, out); err != nil {
 		return nil, err
 	}
-
 	return out, nil
 }
 
@@ -625,6 +736,9 @@ func (m *MessageCriteria) GetURL() string {
 	if m.Label != "" {
 		v.Set("label", m.Label)
 	}
+	if m.StartLabel != "" {
+		v.Set("startLabel", m.StartLabel)
+	}
 	if m.NotLabel != "" {
 		v.Set("notLabel", m.NotLabel)
 	}
@@ -633,6 +747,9 @@ func (m *MessageCriteria) GetURL() string {
 	}
 	if m.Tag != "" {
 		v.Set("tag", m.Tag)
+	}
+	if m.StartTag != "" {
+		v.Set("startTag", m.StartTag)
 	}
 	if m.NotTag != "" {
 		v.Set("notTag", m.NotTag)
@@ -651,6 +768,48 @@ func (m *MessageCriteria) GetURL() string {
 	}
 	if m.DateMaxUpdate != "" {
 		v.Set("dateMaxUpdate", m.DateMaxUpdate)
+	}
+	if m.DateRefCreation != "" {
+		v.Set("dateRefCreation", m.DateRefCreation)
+	}
+	if m.DateRefDeltaMinCreation != "" {
+		v.Set("dateRefDeltaMinCreation", m.DateRefDeltaMinCreation)
+	}
+	if m.DateRefDeltaMaxCreation != "" {
+		v.Set("dateRefDeltaMaxCreation", m.DateRefDeltaMaxCreation)
+	}
+	if m.DateRefUpdate != "" {
+		v.Set("dateRefUpdate", m.DateRefUpdate)
+	}
+	if m.DateRefDeltaMinUpdate != "" {
+		v.Set("dateRefDeltaMinUpdate", m.DateRefDeltaMinUpdate)
+	}
+	if m.DateRefDeltaMaxUpdate != "" {
+		v.Set("dateRefDeltaMaxUpdate", m.DateRefDeltaMaxUpdate)
+	}
+	if m.LastMinCreation != "" {
+		v.Set("lastMinCreation", m.LastMinCreation)
+	}
+	if m.LastMaxCreation != "" {
+		v.Set("lastMaxCreation", m.LastMaxCreation)
+	}
+	if m.LastMinUpdate != "" {
+		v.Set("lastMinUpdate", m.LastMinUpdate)
+	}
+	if m.LastMaxUpdate != "" {
+		v.Set("lastMaxUpdate", m.LastMaxUpdate)
+	}
+	if m.LastHourMinCreation != "" {
+		v.Set("lastHourMinCreation", m.LastHourMinCreation)
+	}
+	if m.LastHourMaxCreation != "" {
+		v.Set("lastHourMaxCreation", m.LastHourMaxCreation)
+	}
+	if m.LastHourMinUpdate != "" {
+		v.Set("lastHourMinUpdate", m.LastHourMinUpdate)
+	}
+	if m.LastHourMaxUpdate != "" {
+		v.Set("lastHourMaxUpdate", m.LastHourMaxUpdate)
 	}
 	if m.Username != "" {
 		v.Set("username", m.Username)
@@ -676,10 +835,129 @@ func (m *MessageCriteria) GetURL() string {
 	if m.OnlyMsgRoot == True {
 		v.Set("onlyMsgRoot", "true")
 	}
+	if m.OnlyMsgReply == True {
+		v.Set("onlyMsgReply", "true")
+	}
 	if m.OnlyCount == True {
 		v.Set("onlyCount", "true")
 	}
+	if m.SortBy != "" {
+		v.Set("sortBy", m.SortBy)
+	}
 	return v.Encode()
+}
+
+// GetMessageCriteriaFromURLValues returns a MessagesCriteria from a url.Values
+func GetMessageCriteriaFromURLValues(values url.Values) (*MessageCriteria, error) {
+	c := &MessageCriteria{}
+	for k, v := range values {
+		switch k {
+		case "skip":
+			i, err := strconv.Atoi(v[0])
+			if err != nil {
+				c.Skip = 0
+			} else {
+				c.Skip = i
+			}
+		case "limit":
+			i, err := strconv.Atoi(v[0])
+			if err != nil {
+				c.Limit = 10
+			} else {
+				c.Limit = i
+			}
+		case "treeView":
+			c.TreeView = v[0]
+		case "idMessage":
+			c.IDMessage = v[0]
+		case "inReplyOfID":
+			c.InReplyOfID = v[0]
+		case "inReplyOfIDRoot":
+			c.InReplyOfIDRoot = v[0]
+		case "allIDMessage":
+			c.AllIDMessage = v[0]
+		case "text":
+			c.Text = v[0]
+		case "topic":
+			c.Topic = v[0]
+		case "label":
+			c.Label = v[0]
+		case "startLabel":
+			c.StartLabel = v[0]
+		case "notLabel":
+			c.NotLabel = v[0]
+		case "andLabel":
+			c.AndLabel = v[0]
+		case "tag":
+			c.Tag = v[0]
+		case "startTag":
+			c.StartTag = v[0]
+		case "notTag":
+			c.NotTag = v[0]
+		case "andTag":
+			c.AndTag = v[0]
+		case "dateMinCreation":
+			c.DateMinCreation = v[0]
+		case "dateMaxCreation":
+			c.DateMaxCreation = v[0]
+		case "dateMinUpdate":
+			c.DateMinUpdate = v[0]
+		case "dateMaxUpdate":
+			c.DateMaxUpdate = v[0]
+		case "lastMinCreation":
+			c.LastMinCreation = v[0]
+		case "lastMaxCreation":
+			c.LastMaxCreation = v[0]
+		case "lastMinUpdate":
+			c.LastMinUpdate = v[0]
+		case "lastMaxUpdate":
+			c.LastMaxUpdate = v[0]
+		case "lastHourMinCreation":
+			c.LastHourMinCreation = v[0]
+		case "lastHourMaxCreation":
+			c.LastHourMaxCreation = v[0]
+		case "lastHourMinUpdate":
+			c.LastHourMinUpdate = v[0]
+		case "lastHourMaxUpdate":
+			c.LastHourMaxUpdate = v[0]
+		case "dateRefCreation":
+			c.DateRefCreation = v[0]
+		case "dateRefDeltaMinCreation":
+			c.DateRefDeltaMinCreation = v[0]
+		case "dateRefDeltaMaxCreation":
+			c.DateRefDeltaMaxCreation = v[0]
+		case "dateRefUpdate":
+			c.DateRefUpdate = v[0]
+		case "dateRefDeltaMinUpdate":
+			c.DateRefDeltaMinUpdate = v[0]
+		case "dateRefDeltaMaxUpdate":
+			c.DateRefDeltaMaxUpdate = v[0]
+		case "username":
+			c.Username = v[0]
+		case "limitMinNbReplies":
+			c.LimitMinNbReplies = v[0]
+		case "limitMaxNbReplies":
+			c.LimitMaxNbReplies = v[0]
+		case "limitMinNbVotesUP":
+			c.LimitMinNbVotesUP = v[0]
+		case "limitMaxNbVotesUP":
+			c.LimitMaxNbVotesUP = v[0]
+		case "limitMinNbVotesDown":
+			c.LimitMinNbVotesDown = v[0]
+		case "limitMaxNbVotesDown":
+			c.LimitMaxNbVotesDown = v[0]
+		case "onlyMsgRoot":
+			c.OnlyMsgRoot = v[0]
+		case "onlyMsgReply":
+			c.OnlyMsgReply = v[0]
+		case "onlyCount":
+			c.OnlyCount = v[0]
+		case "sortBy":
+			c.SortBy = v[0]
+		}
+	}
+
+	return c, nil
 }
 
 //MessageCount count messages on a topic according to criterias
@@ -726,15 +1004,15 @@ func (c *Client) messagesList(topic string, criteria *MessageCriteria) ([]byte, 
 	criteria.Topic = topic
 
 	path := fmt.Sprintf("/messages%s?%s", criteria.Topic, criteria.GetURL())
-	DebugLogFunc("MessageList>>> Path requested: %s", path)
+	DebugLogFunc("MessageList: Path requested: %s", path)
 
 	body, err := c.reqWant(http.MethodGet, 200, path, nil)
 	if err != nil {
-		ErrorLogFunc("messagesList >> Error getting messages list: %s", err)
+		ErrorLogFunc("messagesList: Error getting messages list: %s", err)
 		return nil, err
 	}
 
-	DebugLogFunc("MessageList>>> Messages List Reponse, len body %d", len(body))
+	DebugLogFunc("MessageList: Messages List Response, len body %d", len(body))
 	return body, err
 }
 
@@ -779,4 +1057,26 @@ func (m *Message) GetTag(tag string) (int, string, error) {
 func (m *Message) ContainsTag(tag string) bool {
 	_, _, err := m.GetTag(tag)
 	return err == nil
+}
+
+func GetDateRef(pattern string) (time.Time, error) {
+	var dateRef time.Time
+	now.FirstDayMonday = true
+	switch pattern {
+	case "BeginningOfMinute":
+		return now.BeginningOfMinute(), nil
+	case "BeginningOfHour":
+		return now.BeginningOfHour(), nil
+	case "BeginningOfDay":
+		return now.BeginningOfDay(), nil
+	case "BeginningOfWeek":
+		return now.BeginningOfWeek(), nil
+	case "BeginningOfMonth":
+		return now.BeginningOfMonth(), nil
+	case "BeginningOfQuarter":
+		return now.BeginningOfQuarter(), nil
+	case "BeginningOfYear":
+		return now.BeginningOfYear(), nil
+	}
+	return dateRef, fmt.Errorf("Invalid pattern:%s", pattern)
 }

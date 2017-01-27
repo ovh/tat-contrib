@@ -9,6 +9,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	typeChat      = "chat"
+	typeGroupChat = "groupchat"
+)
+
 func serverName(host string) string {
 	return strings.Split(host, ":")[0]
 }

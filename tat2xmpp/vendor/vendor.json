@@ -142,10 +142,10 @@
 			"revisionTime": "2016-08-08T18:12:53Z"
 		},
 		{
-			"checksumSHA1": "3Ub69voFA71XItI3CxTLhxS8rwE=",
+			"checksumSHA1": "/pG5Wnt6ZgbY3Zc/lGkatforsJc=",
 			"path": "github.com/ovh/tat",
-			"revision": "ad7ebb4932da89aea0966566f6def136c2b30abc",
-			"revisionTime": "2016-10-07T10:14:33Z"
+			"revision": "9ff1c9988e3e35f6afcc2ba51125135dd4ee927f",
+			"revisionTime": "2017-01-27T16:40:47Z"
 		},
 		{
 			"checksumSHA1": "8Y05Pz7onrQPcVWW6JStSsYRh6E=",
@@ -280,5 +280,5 @@
 			"revisionTime": "2016-07-15T03:37:55Z"
 		}
 	],
-	"rootPath": "github.com/ovh/tat2xmpp"
+	"rootPath": "github.com/ovh/tat-contrib/tat2xmpp"
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -17,6 +18,7 @@ import (
 const VERSION = "0.6.0"
 
 var configFile string
+var admins []string
 
 var mainCmd = &cobra.Command{
 	Use:   "tat2xmpp",
@@ -82,6 +84,9 @@ var mainCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("Error while initialize client err:%s", err)
 		}
+
+		admins = strings.Split(viper.GetString("admin_tat2xmpp"), ",")
+
 		go tatbot.born()
 
 		if err := s.ListenAndServe(); err != nil {
@@ -125,6 +130,9 @@ func init() {
 
 	flags.String("xmpp-hello-world", "", "Sending Hello World message to this jabber id")
 	viper.BindPFlag("xmpp_hello_world", flags.Lookup("xmpp-hello-world"))
+
+	flags.String("admin-tat2xmpp", "", "Admin tat2xmpp admina@jabber.xxx.net,adminb@jabber.xxx.net,")
+	viper.BindPFlag("admin_tat2xmpp", flags.Lookup("admin-tat2xmpp"))
 
 	flags.Bool("xmpp-debug", false, "XMPP Debug")
 	viper.BindPFlag("xmpp_debug", flags.Lookup("xmpp-debug"))

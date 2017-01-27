@@ -23,6 +23,7 @@ type Topic struct {
 	AdminGroups          []string         `bson:"adminGroups" json:"adminGroups,omitempty"`
 	History              []string         `bson:"history" json:"history"`
 	MaxLength            int              `bson:"maxlength" json:"maxlength"`
+	MaxReplies           int              `bson:"maxreplies" json:"maxreplies"`
 	CanForceDate         bool             `bson:"canForceDate" json:"canForceDate"`
 	CanUpdateMsg         bool             `bson:"canUpdateMsg" json:"canUpdateMsg"`
 	CanDeleteMsg         bool             `bson:"canDeleteMsg" json:"canDeleteMsg"`
@@ -99,9 +100,10 @@ type TopicCriteria struct {
 	GetForTatAdmin       string
 	GetForAllTasksTopics bool
 	Group                string
+	SortBy               string
 }
 
-// CacheKey returns cacke key value
+// CacheKey returns cache key value
 func (t *TopicCriteria) CacheKey() []string {
 	var s = []string{}
 	if t == nil {
@@ -146,6 +148,9 @@ func (t *TopicCriteria) CacheKey() []string {
 	if t.Group != "" {
 		s = append(s, "group="+t.Group)
 	}
+	if t.SortBy != "" {
+		s = append(s, "sort_by="+t.SortBy)
+	}
 	return s
 }
 
@@ -183,6 +188,15 @@ type TopicJSON struct {
 	Topic        *Topic `json:"topic"`
 	IsTopicRw    bool   `json:"isTopicRw"`
 	IsTopicAdmin bool   `json:"isTopicAdmin"`
+}
+
+// TopicDistributionJSON represents struct used by Engine while returns topic distribution
+type TopicDistributionJSON struct {
+	ID         string `json:"id"`
+	Topic      string `json:"topic"`
+	Count      int    `json:"count"`
+	Dedicated  bool   `json:"dedicated"`
+	Collection string `json:"collection"`
 }
 
 // TopicNameJSON represents struct, only topic name
@@ -538,6 +552,7 @@ func (c *Client) TopicDeleteParameters(topic string, params []string, recursive 
 type TopicParameters struct {
 	Topic                string `json:"topic"`
 	MaxLength            int    `json:"maxlength"`
+	MaxReplies           int    `json:"maxreplies"`
 	CanForceDate         bool   `json:"canForceDate"`
 	CanUpdateMsg         bool   `json:"canUpdateMsg"`
 	CanDeleteMsg         bool   `json:"canDeleteMsg"`

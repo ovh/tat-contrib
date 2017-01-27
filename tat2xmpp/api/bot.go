@@ -184,9 +184,9 @@ func (bot *botClient) sendRetry(v xmpp.Chat) {
 
 func getTypeChat(s string) string {
 	if strings.Contains(s, "@conference.") {
-		return "groupchat"
+		return typeGroupChat
 	}
-	return "chat"
+	return typeChat
 }
 
 func (bot *botClient) receiveMsg(chat xmpp.Chat) {
@@ -202,9 +202,9 @@ func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 		return
 	}
 
-	if strings.HasPrefix(chat.Text, "tat, ") {
+	if strings.HasPrefix(chat.Text, "tat, ") || strings.HasPrefix(chat.Text, "/tat ") {
 		log.Infof("receiveMsg for tat bot >> %s from remote:%s stamp:%s", chat.Text, chat.Remote, chat.Stamp)
-		answer(chat)
+		bot.answer(chat)
 	}
 
 	for _, t := range topicConfs {
@@ -227,72 +227,6 @@ func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 			}
 		}
 	}
-}
-
-func answer(chat xmpp.Chat) {
-
-	typeXMPP := getTypeChat(chat.Remote)
-	remote := chat.Remote
-	to := chat.Remote
-	if typeXMPP == "groupchat" {
-		if strings.Contains(chat.Remote, "/") {
-			t := strings.Split(chat.Remote, "/")
-			remote = t[0]
-			to = t[1]
-		}
-	} else {
-		to = strings.Split(chat.Remote, "@")[0]
-	}
-
-	chats <- xmpp.Chat{
-		Remote: remote,
-		Type:   typeXMPP,
-		Text:   prepareAnswer(chat.Text, to),
-	}
-	nbXMPPAnswers++
-}
-
-func prepareAnswer(question, remote string) string {
-	if question == "tat, give me tat2xmpp status" {
-		return getStatus()
-	} else if question == "tat, ping" {
-		return "pong"
-	} else if strings.HasPrefix(question, "tat, hi") {
-		return "Hi " + remote
-	} else if strings.HasPrefix(question, "tat, yes or no?") {
-		if rand.Int()%2 == 0 {
-			return "yes"
-		}
-		return "no"
-	}
-	return random()
-}
-
-func random() string {
-	answers := []string{
-		"It is certain",
-		"It is decidedly so",
-		"Without a doubt",
-		"Yes definitely",
-		"You may rely on it",
-		"As I see it yes",
-		"Most likely",
-		"Outlook good",
-		"Yes",
-		"Signs point to yes",
-		"Reply hazy try again",
-		"Ask again later",
-		"Better not tell you now",
-		"Cannot predict now",
-		"Concentrate and ask again",
-		"Don't count on it",
-		"My reply is no",
-		"My sources say no",
-		"Outlook not so good",
-		"Very doubtful",
-		"Nooooo",
-	}
-	return answers[rand.Intn(len(answers))]
 }
 
 // hookJSON is handler for Tat Webhook HookJSON
@@ -336,7 +270,7 @@ func hookProcess(hook tat.HookJSON) {
 	}
 
 	typeXMPP := getTypeChat(destination)
-	if typeXMPP == "groupchat" {
+	if typeXMPP == typeGroupChat {
 		presenceToSend := true
 		for _, c := range topicConfs {
 			if strings.HasPrefix(c.conference, destination) {
