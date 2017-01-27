@@ -42,7 +42,7 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 			return getStatus()
 		}
 		return short + ": forbidden for you " + remote
-	} else if question == "get" {
+	} else if strings.HasPrefix(question, "GET ") || strings.HasPrefix(question, "COUNT ") {
 		return bot.requestTat(question)
 	} else if question == "ping" {
 		return short + ": pong"
@@ -59,7 +59,7 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 
 func isAdmin(r string) bool {
 	for _, a := range admins {
-		if strings.HasPrefix(a, r) {
+		if strings.HasPrefix(r, a) {
 			return true
 		}
 	}
