@@ -31,31 +31,43 @@ func (bot *botClient) answer(chat xmpp.Chat) {
 	chats <- xmpp.Chat{
 		Remote: remote,
 		Type:   typeXMPP,
-		Text:   bot.prepareAnswer(chat.Text, to, chat.Remote),
+		Text:   to + ": " + bot.prepareAnswer(chat.Text, to, chat.Remote),
 	}
 	nbXMPPAnswers++
 }
 
 func (bot *botClient) prepareAnswer(text, short, remote string) string {
 	question := text[5:] // remove '/tat ' or 'tat, '
-	if question == "tat2xmpp status" {
+	if question == "help" {
+		return help()
+	} else if question == "tat2xmpp status" {
 		if isAdmin(remote) {
 			return getStatus()
 		}
-		return short + ": forbidden for you " + remote
+		return "forbidden for you " + remote
 	} else if strings.HasPrefix(question, "GET ") || strings.HasPrefix(question, "COUNT ") {
 		return bot.requestTat(question, remote)
 	} else if question == "ping" {
-		return short + ": pong"
+		return "pong"
 	} else if strings.HasPrefix(question, "hi") {
-		return short + ": Hi!"
+		return "Hi!"
 	} else if strings.HasPrefix(question, "yes or no?") {
 		if rand.Int()%2 == 0 {
-			return short + ": yes"
+			return "yes"
 		}
-		return short + ": no"
+		return "no"
 	}
 	return random()
+}
+
+func help() string {
+	return `
+Begin conversation with "tat," or "/tat", then:
+- simple request: "tat, ping"
+- request tat:
+ "/tat COUNT /Internal/Alerts?tag=NETWORK,label=open"
+ "/tat GET /Internal/Alerts?tag=PUBCLOUD-serv,PUBCLOUD-host&label=open"
+`
 }
 
 func isAdmin(r string) bool {
@@ -133,7 +145,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 	}
 
 	msgs := fmt.Sprintf("%d message%s matching", out.Count, plurial(out.Count))
-	if strings.HasPrefix(in, "COUNT ") {
+	if strings.HasPrefix(in, "COUNT ") || out.Count == 0 {
 		return msgs
 	}
 
@@ -145,7 +157,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 	}
 
 	if len(outmsg.Messages) == 0 {
-		return "0 message after requesting details... strange..."
+		return msgs + " but 0 message after requesting details... strange..."
 	}
 
 	msgs += ":\n"

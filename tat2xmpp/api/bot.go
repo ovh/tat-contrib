@@ -24,6 +24,8 @@ var (
 	nbXMPPAnswers          int
 	nbRenew                int
 	nbTopicConfs           int
+	nbRequestsCountTat     int
+	nbRequestsGetTat       int
 	chats                  chan xmpp.Chat
 )
 
@@ -78,8 +80,8 @@ func (bot *botClient) helloWorld() {
 }
 
 func getStatus() string {
-	return fmt.Sprintf("tat2xmpp-status>> started:%s nbXMPPErrors:%d nbXMPPErrorsAfterRetry:%d nbXMPPSent:%d nbXMPPAnswers:%d nbTatErrors:%d nbTatSent:%d nbTopicConfs:%d nbTopicConfsFilterHook:%d renew:%d",
-		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbXMPPAnswers, nbTatErrors, nbTatSent, nbTopicConfs, len(topicConfsFilterHook), nbRenew)
+	return fmt.Sprintf("tat2xmpp-status>> started:%s\n nbXMPPErrors:%d\n nbXMPPErrorsAfterRetry:%d\n nbXMPPSent:%d\n nbXMPPAnswers:%d\n nbTatErrors:%d\n nbTatSent:%d\n nbTopicConfs:%d\n nbTopicConfsFilterHook:%d\n renew:%d\n nbRequestsCountTat:%d\n nbRequestsGetTat:%d\n",
+		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbXMPPAnswers, nbTatErrors, nbTatSent, nbTopicConfs, len(topicConfsFilterHook), nbRenew, nbRequestsCountTat, nbRequestsGetTat)
 }
 
 func status() {

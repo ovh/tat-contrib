@@ -29,6 +29,8 @@ func initRoutes(router *gin.Engine) {
 			"nbTatSent":              nbTatSent,
 			"nbTopicConfs":           nbTopicConfs,
 			"nbTopicConfsFilterHook": len(topicConfsFilterHook),
+			"nbRequestsCountTat":     nbRequestsCountTat,
+			"nbRequestsGetTat":       nbRequestsGetTat,
 			"nbRenew":                nbRenew,
 		})
 	})
