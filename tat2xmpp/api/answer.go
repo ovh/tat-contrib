@@ -78,7 +78,7 @@ func (bot *botClient) execAlias(question, remote string) string {
 			if strings.HasPrefix(tag, "alias:") {
 				for _, cmd := range strings.Split(strings.TrimPrefix(tag, "alias:"), ",") {
 					if strings.HasPrefix(question, "!"+cmd) {
-						return bot.execAliasRequest(alias, remote, strings.TrimPrefix(question, "!"+cmd))
+						return bot.execAliasRequest(alias, remote, strings.TrimSpace(strings.TrimPrefix(question, "!"+cmd)))
 					}
 				}
 			}
@@ -89,7 +89,7 @@ func (bot *botClient) execAlias(question, remote string) string {
 
 func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) string {
 
-	values := strings.Split(strings.TrimSpace(args), " ")
+	values := strings.Split(args, " ")
 	va := make([]interface{}, len(values))
 	for i, v := range values {
 		va[i] = v
@@ -103,12 +103,12 @@ func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) str
 	}
 	for _, tag := range msg.Tags {
 		if strings.HasPrefix(tag, "get:") {
-			if len(values) > 0 {
+			if args != "" {
 				return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format, va...), remote)
 			}
 			return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format), remote)
 		} else if strings.HasPrefix(tag, "count:") {
-			if len(values) > 0 {
+			if args != "" {
 				return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format, va...), remote)
 			}
 			return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format), remote)
