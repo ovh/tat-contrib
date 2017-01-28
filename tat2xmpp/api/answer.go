@@ -45,8 +45,10 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 			return getStatus()
 		}
 		return "forbidden for you " + remote
-	} else if question == "aliases" {
-		return getAliases(remote)
+	} else if question == "aliases" || question == "aliases all" {
+		return getAliases(remote, question)
+	} else if strings.HasPrefix(question, "aliases") {
+		return getAliases(remote, question)
 	} else if strings.HasPrefix(question, "GET ") || strings.HasPrefix(question, "COUNT ") {
 		return bot.requestTat(question, remote)
 	} else if strings.HasPrefix(question, "!") {
@@ -111,7 +113,13 @@ func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) str
 	return "Invalid alias: " + msg.Text
 }
 
-func getAliases(remote string) string {
+func getAliases(remote, question string) string {
+
+	filter := strings.TrimPrefix(question, "aliases ")
+	if strings.TrimSpace(filter) == "" {
+		filter = "common"
+	}
+
 	isadm := isAdmin(remote)
 	out := ""
 	for _, alias := range aliases {
@@ -119,11 +127,22 @@ func getAliases(remote string) string {
 		if !canViewAlias(isadm, alias, remote) {
 			continue
 		}
+
+		found := false
+		for _, t := range alias.Tags {
+			if t == filter {
+				found = true
+			}
+		}
+		if !found {
+			continue
+		}
+
 		t := strings.Replace(strings.TrimSpace(alias.Text), "#tatbot ", "", 1)
 		t = strings.Replace(t, "#alias ", "", 1)
 		t = strings.Replace(t, "#get:", "/tat GET ", 1)
 		t = strings.Replace(t, "#count:", "/tat COUNT ", 1)
-		out += fmt.Sprintf("%s by %s in topic %s\n------\n", t, alias.Author.Username, alias.Topic)
+		out += fmt.Sprintf("%s \nAuthor: %s in topic %s\n------\n", t, alias.Author.Username, alias.Topic)
 	}
 	if out == "" {
 		return "no alias configured"
@@ -163,10 +182,12 @@ urls,tags,dateCreation,dateUpdate,username,fullname,nbReplies,tatwebuiURL
 
 User tat.system.jabber have to be RO on tat topic for requesting tat.
 
-Get aliases : "/tat aliases"
+Get aliases : "/tat aliases", same as "/tat aliases common"
+Get aliases with a specific tag : "/tat aliases run"
+
 Execute an alias : "/tat !myAlias arg1 arg2"
 
-If you add a tat message as:
+If you add a tat message, with label "common" and text:
 "#tatbot #alias #alias:alert #get:/Internal/Alerts?tag=%s&label=%s"
 you can execute it over XMPP as : "/tat !alert CD open"
 
