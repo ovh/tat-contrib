@@ -71,9 +71,9 @@ func (bot *botClient) execAlias(question, remote string) string {
 		}
 		for _, tag := range alias.Tags {
 			if strings.HasPrefix(tag, "alias:") {
-				for _, short := range strings.Split(tag, ",") {
-					if strings.HasPrefix(strings.ToLower(question), "!"+strings.ToLower(short)) {
-						return bot.execAliasRequest(alias, remote)
+				for _, cmd := range strings.Split(strings.TrimPrefix(tag, "alias:"), ",") {
+					if strings.HasPrefix(question, "!"+cmd) {
+						return bot.execAliasRequest(alias, remote, strings.TrimPrefix(question, "!"+cmd))
 					}
 				}
 			}
@@ -82,13 +82,18 @@ func (bot *botClient) execAlias(question, remote string) string {
 	return fmt.Sprintf("Invalid Alias %s, please check aliases with command /tat aliases", question)
 }
 
-func (bot *botClient) execAliasRequest(msg tat.Message, remote string) string {
+func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) string {
 
+	values := strings.Split(strings.TrimSpace(args), " ")
+	va := make([]interface{}, len(values))
+	for i, v := range values {
+		va[i] = v
+	}
 	for _, tag := range msg.Tags {
 		if strings.HasPrefix(tag, "get:") {
-			return bot.requestTat("GET "+tag[4:], remote)
+			return bot.requestTat(fmt.Sprintf("GET "+tag[4:], va), remote)
 		} else if strings.HasPrefix(tag, "count:") {
-			return bot.requestTat("COUNT "+tag[6:], remote)
+			return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:], va), remote)
 		}
 	}
 	return "Invalid alias: " + msg.Text
@@ -104,14 +109,14 @@ func getAliases(remote string) string {
 		}
 		t := strings.Replace(strings.TrimSpace(alias.Text), "#tatbot ", "", 1)
 		t = strings.Replace(t, "#alias ", "", 1)
-		t = strings.Replace(t, "#get:", "/tatcli GET ", 1)
-		t = strings.Replace(t, "#count:", "/tatcli COUNT ", 1)
+		t = strings.Replace(t, "#get:", "/tat GET ", 1)
+		t = strings.Replace(t, "#count:", "/tat COUNT ", 1)
 		out += fmt.Sprintf("%s by %s in topic %s\n", t, alias.Author.Username, alias.Topic)
 	}
 	if out == "" {
 		return "no alias configured"
 	}
-	return out
+	return " aliases:\n" + out
 }
 
 func canViewAlias(isAdm bool, msg tat.Message, remote string) bool {
@@ -242,7 +247,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 		return "Error while requesting tat (count)"
 	}
 
-	msgs := fmt.Sprintf("%d message%s matching", out.Count, plurial(out.Count))
+	msgs := fmt.Sprintf("%d message%s matching request %s", out.Count, plurial(out.Count), in)
 	if strings.HasPrefix(in, "COUNT ") || out.Count == 0 {
 		return msgs
 	}
