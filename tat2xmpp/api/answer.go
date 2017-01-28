@@ -113,8 +113,8 @@ func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) str
 
 func getAliases(remote, question string) string {
 
-	filter := strings.TrimPrefix(question, "aliases")
-	if strings.TrimSpace(filter) == "" {
+	filter := strings.TrimSpace(strings.TrimPrefix(question, "aliases"))
+	if filter == "" {
 		filter = "common"
 	}
 
