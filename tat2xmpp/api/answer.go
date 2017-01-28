@@ -44,8 +44,12 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 			return getStatus()
 		}
 		return "forbidden for you " + remote
+	} else if question == "aliases" {
+		return getAliases(remote)
 	} else if strings.HasPrefix(question, "GET ") || strings.HasPrefix(question, "COUNT ") {
 		return bot.requestTat(question, remote)
+	} else if strings.HasPrefix(question, "!") {
+		return bot.execAlias(question, remote)
 	} else if question == "ping" {
 		return "pong"
 	} else if strings.HasPrefix(question, "hi") {
@@ -57,6 +61,67 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 		return "no"
 	}
 	return random()
+}
+
+func (bot *botClient) execAlias(question, remote string) string {
+	isadm := isAdmin(remote)
+	for _, alias := range aliases {
+		if !canViewAlias(isadm, alias, remote) {
+			continue
+		}
+		for _, tag := range alias.Tags {
+			if strings.HasPrefix(tag, "alias:") {
+				for _, short := range strings.Split(tag, ",") {
+					if strings.HasPrefix(strings.ToLower(question), "!"+strings.ToLower(short)) {
+						return bot.execAliasRequest(alias, remote)
+					}
+				}
+			}
+		}
+	}
+	return fmt.Sprintf("Invalid Alias %s, please check aliases with command /tat aliases", question)
+}
+
+func (bot *botClient) execAliasRequest(msg tat.Message, remote string) string {
+
+	for _, tag := range msg.Tags {
+		if strings.HasPrefix(tag, "get:") {
+			return bot.requestTat("GET "+tag[4:], remote)
+		} else if strings.HasPrefix(tag, "count:") {
+			return bot.requestTat("COUNT "+tag[6:], remote)
+		}
+	}
+	return "Invalid alias: " + msg.Text
+}
+
+func getAliases(remote string) string {
+	isadm := isAdmin(remote)
+	out := ""
+	for _, alias := range aliases {
+		// for private topics, if not admin, check author of message
+		if !canViewAlias(isadm, alias, remote) {
+			continue
+		}
+		t := strings.Replace(strings.TrimSpace(alias.Text), "#tatbot ", "", 1)
+		t = strings.Replace(t, "#alias ", "", 1)
+		t = strings.Replace(t, "#get:", "/tatcli GET ", 1)
+		t = strings.Replace(t, "#count:", "/tatcli COUNT ", 1)
+		out += fmt.Sprintf("%s by %s in topic %s\n", t, alias.Author.Username, alias.Topic)
+	}
+	if out == "" {
+		return "no alias configured"
+	}
+	return out
+}
+
+func canViewAlias(isAdm bool, msg tat.Message, remote string) bool {
+	if isAdm {
+		return true
+	}
+	if strings.HasPrefix(msg.Topic, "/Private/") && strings.HasPrefix(remote, msg.Author.Username+"@") {
+		return true
+	}
+	return false
 }
 
 func help() string {
@@ -80,6 +145,15 @@ votersUP,votersDown,nbVotesUP,nbVotesDown,userMentions,
 urls,tags,dateCreation,dateUpdate,username,fullname,nbReplies
 
 User tat.system.jabber have to be RO on tat topic for requesting tat.
+
+Get aliases : "/tat aliases"
+Execute an alias : "/tat !myAlias arg1 arg2"
+
+If you add a tat message like
+"#tatbot #alias #alias:PR,PullRequest #request:/Internal/Alerts?tag=%s&label=%s"
+you can execute it over XMPP as :
+"/tat !PR CD open"
+
 `
 }
 
@@ -122,7 +196,7 @@ func random() string {
 func (bot *botClient) requestTat(in, remote string) string {
 	defaultLimit := 5
 
-	help := "Invalid request. Use COUNT or GET. Example COUNT /YourTopic?tag=foo, see /tat help"
+	help := "Invalid request. See /tat help"
 	if !strings.HasPrefix(in, "COUNT ") && !strings.HasPrefix(in, "GET ") {
 		return help
 	}
@@ -146,7 +220,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 	if strings.Contains(topic, "?") {
 		tuple2 := strings.Split(topic, "?")
 		if len(tuple2) != 2 {
-			return "Invalid request. Request have to contains ?, example COUNT, see /tat help"
+			return "Invalid request. Request have to contains ?, see /tat help"
 		}
 		topic = tuple2[0]
 		var errv error

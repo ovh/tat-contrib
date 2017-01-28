@@ -27,6 +27,7 @@ var (
 	nbRequestsCountTat     int
 	nbRequestsGetTat       int
 	chats                  chan xmpp.Chat
+	aliases                []tat.Message
 )
 
 const resource = "tat"
@@ -101,6 +102,7 @@ func (bot *botClient) sendPresencesOnConfs() error {
 	}
 
 	topicConfsNew := []topicConf{}
+	newAliases := []tat.Message{}
 	for _, t := range topicsJSON.Topics {
 		for _, p := range t.Parameters {
 			if strings.HasPrefix(p.Key, tat.HookTypeXMPP) {
@@ -113,6 +115,8 @@ func (bot *botClient) sendPresencesOnConfs() error {
 				}
 			}
 		}
+
+		newAliases = append(newAliases, bot.getAlias(t.Topic)...)
 	}
 
 	nbTopicConfs = len(topicConfsNew)
@@ -125,7 +129,19 @@ func (bot *botClient) sendPresencesOnConfs() error {
 		bot.XMPPClient.JoinMUCNoHistory(strings.TrimSpace(destination), resource)
 	}
 
+	aliases = newAliases
+
 	return nil
+}
+
+func (bot *botClient) getAlias(topic string) []tat.Message {
+	msgs, err := bot.TatClient.MessageList(topic, &tat.MessageCriteria{AndTag: "tatbot,alias", NotLabel: "off"})
+	if err != nil {
+		log.Errorf("getAlias >> error while requesting tat:%s on topic %s", err, topic)
+		return nil
+	}
+
+	return msgs.Messages
 }
 
 func (bot *botClient) sendToXMPP() {
