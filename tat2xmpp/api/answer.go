@@ -65,6 +65,10 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 }
 
 func (bot *botClient) execAlias(question, remote string) string {
+	if len(aliases) == 0 {
+		return fmt.Sprintf("no alias configured")
+	}
+
 	isadm := isAdmin(remote)
 	for _, alias := range aliases {
 		if !canViewAlias(isadm, alias, remote) {

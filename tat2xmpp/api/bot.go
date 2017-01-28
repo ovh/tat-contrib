@@ -60,7 +60,7 @@ func (bot *botClient) born() {
 	for {
 		sendInitialPresence(bot.XMPPClient)
 		time.Sleep(10 * time.Second)
-		bot.sendPresencesOnConfs()
+		bot.sendPresencesOnConfs(true)
 		time.Sleep(20 * time.Second)
 	}
 }
@@ -92,10 +92,10 @@ func status() {
 
 func (bot *botClient) renewXMPP() {
 	nbRenew++
-	bot.sendPresencesOnConfs()
+	bot.sendPresencesOnConfs(false)
 }
 
-func (bot *botClient) sendPresencesOnConfs() error {
+func (bot *botClient) sendPresencesOnConfs(refreshAlias bool) error {
 	topicsJSON, err := bot.TatClient.TopicList(&tat.TopicCriteria{})
 	if err != nil {
 		return err
@@ -116,7 +116,10 @@ func (bot *botClient) sendPresencesOnConfs() error {
 			}
 		}
 
-		newAliases = append(newAliases, bot.getAlias(t.Topic)...)
+		if refreshAlias {
+			newAliases = append(newAliases, bot.getAlias(t.Topic)...)
+		}
+
 	}
 
 	nbTopicConfs = len(topicConfsNew)
@@ -129,7 +132,9 @@ func (bot *botClient) sendPresencesOnConfs() error {
 		bot.XMPPClient.JoinMUCNoHistory(strings.TrimSpace(destination), resource)
 	}
 
-	aliases = newAliases
+	if refreshAlias {
+		aliases = newAliases
+	}
 
 	return nil
 }
