@@ -118,6 +118,8 @@ func random() string {
 }
 
 func (bot *botClient) requestTat(in, remote string) string {
+	defaultLimit := 5
+
 	help := "Invalid request. Use COUNT or GET. Example COUNT /YourTopic?tag=foo, see /tat help"
 	if !strings.HasPrefix(in, "COUNT ") && !strings.HasPrefix(in, "GET ") {
 		return help
@@ -135,6 +137,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 		if !strings.HasPrefix(format, "format:") {
 			return "Invalid format, see /tat help"
 		}
+		format = strings.TrimPrefix(format, "format:")
 	}
 
 	var values url.Values
@@ -168,7 +171,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 		return msgs
 	}
 
-	criteria.Limit = 5
+	criteria.Limit = defaultLimit
 	outmsg, errc := bot.TatClient.MessageList(topic, criteria)
 	if errc != nil {
 		log.Warnf("Error requesting tat (list) for %s :%s", remote, errc)
@@ -179,17 +182,20 @@ func (bot *botClient) requestTat(in, remote string) string {
 		return msgs + " but 0 message after requesting details... strange..."
 	}
 
+	if len(outmsg.Messages) > defaultLimit {
+		msgs += fmt.Sprintf(" but show only %d here", defaultLimit)
+	}
+
 	msgs += ":\n"
 	for _, m := range outmsg.Messages {
 		f, err := m.Format(format)
 		if err != nil {
-			return "Invalid format, see /tat help"
+			return fmt.Sprintf("Invalid format "+format+", see /tat help", format)
 		}
 		msgs += f + "\n"
 	}
 
 	return msgs
-
 }
 
 func plurial(n int) string {
