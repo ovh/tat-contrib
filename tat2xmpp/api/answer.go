@@ -103,9 +103,15 @@ func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) str
 	}
 	for _, tag := range msg.Tags {
 		if strings.HasPrefix(tag, "get:") {
-			return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format, va...), remote)
+			if len(values) > 0 {
+				return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format, va...), remote)
+			}
+			return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format), remote)
 		} else if strings.HasPrefix(tag, "count:") {
-			return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format, va...), remote)
+			if len(values) > 0 {
+				return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format, va...), remote)
+			}
+			return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format), remote)
 		}
 	}
 	return "Invalid alias: " + msg.Text
