@@ -45,8 +45,6 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 			return getStatus()
 		}
 		return "forbidden for you " + remote
-	} else if question == "aliases" || question == "aliases all" {
-		return getAliases(remote, question)
 	} else if strings.HasPrefix(question, "aliases") {
 		return getAliases(remote, question)
 	} else if strings.HasPrefix(question, "GET ") || strings.HasPrefix(question, "COUNT ") {
@@ -115,7 +113,7 @@ func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) str
 
 func getAliases(remote, question string) string {
 
-	filter := strings.TrimPrefix(question, "aliases ")
+	filter := strings.TrimPrefix(question, "aliases")
 	if strings.TrimSpace(filter) == "" {
 		filter = "common"
 	}
@@ -129,8 +127,8 @@ func getAliases(remote, question string) string {
 		}
 
 		found := false
-		for _, t := range alias.Tags {
-			if t == filter {
+		for _, t := range alias.Labels {
+			if t.Text == filter {
 				found = true
 			}
 		}
@@ -183,7 +181,7 @@ urls,tags,dateCreation,dateUpdate,username,fullname,nbReplies,tatwebuiURL
 User tat.system.jabber have to be RO on tat topic for requesting tat.
 
 Get aliases : "/tat aliases", same as "/tat aliases common"
-Get aliases with a specific tag : "/tat aliases run"
+Get aliases with a specific tag : "/tat aliases atag"
 
 Execute an alias : "/tat !myAlias arg1 arg2"
 
