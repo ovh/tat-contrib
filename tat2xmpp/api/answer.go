@@ -154,10 +154,13 @@ User tat.system.jabber have to be RO on tat topic for requesting tat.
 Get aliases : "/tat aliases"
 Execute an alias : "/tat !myAlias arg1 arg2"
 
-If you add a tat message like
-"#tatbot #alias #alias:PR,PullRequest #request:/Internal/Alerts?tag=%s&label=%s"
-you can execute it over XMPP as :
-"/tat !PR CD open"
+If you add a tat message as:
+"#tatbot #alias #alias:alert #get:/Internal/Alerts?tag=%s&label=%s"
+you can execute it over XMPP as : "/tat !alert CD open"
+
+For a count request:
+"#tatbot #alias #alias:alert.count #count:/Internal/Alerts?tag=%s&label=%s"
+you can execute it over XMPP as : "/tat !alert.count CD open"
 
 `
 }
@@ -216,7 +219,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 	if len(tuple) == 3 {
 		format = tuple[2]
 		if !strings.HasPrefix(format, "format:") {
-			return "Invalid format, see /tat help"
+			return "Invalid format for request " + in + ", see /tat help"
 		}
 		format = strings.TrimPrefix(format, "format:")
 	}
