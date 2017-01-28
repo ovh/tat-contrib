@@ -89,11 +89,18 @@ func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) str
 	for i, v := range values {
 		va[i] = v
 	}
+	format := ""
+	for _, tag := range msg.Tags {
+		if strings.HasPrefix(tag, "format:") {
+			format = tag
+			break
+		}
+	}
 	for _, tag := range msg.Tags {
 		if strings.HasPrefix(tag, "get:") {
-			return bot.requestTat(fmt.Sprintf("GET "+tag[4:], va...), remote)
+			return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format, va...), remote)
 		} else if strings.HasPrefix(tag, "count:") {
-			return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:], va...), remote)
+			return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format, va...), remote)
 		}
 	}
 	return "Invalid alias: " + msg.Text
@@ -270,7 +277,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 		msgs += fmt.Sprintf(" but show only %d here", defaultLimit)
 	}
 
-	msgs += ":\n"
+	msgs += " :\n"
 	for _, m := range outmsg.Messages {
 		f, err := m.Format(format)
 		if err != nil {
