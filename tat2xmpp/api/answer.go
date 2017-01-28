@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"net/url"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/mattn/go-xmpp"
@@ -62,11 +61,23 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 
 func help() string {
 	return `
-Begin conversation with "tat," or "/tat", then:
-- simple request: "tat, ping"
-- request tat:
+Begin conversation with "tat," or "/tat"
+
+Simple request: "tat, ping"
+
+Request tat:
  "/tat COUNT /Internal/Alerts?tag=NETWORK,label=open"
  "/tat GET /Internal/Alerts?tag=PUBCLOUD-serv,PUBCLOUD-host&label=open"
+
+Request tat and format return:
+ "/tat COUNT /Internal/Alerts?tag=NETWORK,label=open format:dateUpdate,username,text"
+
+Default format:dateUpdate,username,text,labels
+
+You can use:
+id,text,topic,inReplyOfID,inReplyOfIDRoot,nbLikes,labels,
+votersUP,votersDown,nbVotesUP,nbVotesDown,userMentions,
+urls,tags,dateCreation,dateUpdate,username,fullname,nbReplies
 `
 }
 
@@ -107,29 +118,37 @@ func random() string {
 }
 
 func (bot *botClient) requestTat(in, remote string) string {
-	help := "invalid request prefix. Use COUNT or GET. Example COUNT /YourTopic?tag=foo"
+	help := "invalid request prefix. Use COUNT or GET. Example COUNT /YourTopic?tag=foo, see /tat help"
 	if !strings.HasPrefix(in, "COUNT ") && !strings.HasPrefix(in, "GET ") {
 		return help
 	}
 
 	tuple := strings.Split(in, " ")
-	if len(tuple) != 2 {
+	if len(tuple) != 2 || len(tuple) != 3 {
 		return help
 	}
 
 	topic := tuple[1]
+	format := ""
+	if len(tuple) == 3 {
+		format = tuple[2]
+		if !strings.HasPrefix(format, "format:") {
+			return "Invalid format, see /tat help"
+		}
+	}
+
 	var values url.Values
 	if strings.Contains(topic, "?") {
 		tuple2 := strings.Split(topic, "?")
 		if len(tuple2) != 2 {
-			return "invalid request. Request have to contains ?, example COUNT"
+			return "invalid request. Request have to contains ?, example COUNT, see /tat help"
 		}
 		topic = tuple2[0]
 		var errv error
 		values, errv = url.ParseQuery(tuple2[1])
 		if errv != nil {
 			log.Warnf("Invalid Query for %s :%s", remote, errv)
-			return "Invalid Query"
+			return "Invalid Query, see /tat help"
 		}
 	}
 
@@ -162,16 +181,11 @@ func (bot *botClient) requestTat(in, remote string) string {
 
 	msgs += ":\n"
 	for _, m := range outmsg.Messages {
-		labels := ""
-		for _, l := range m.Labels {
-			labels += l.Text + " "
+		f, err := m.Format(format)
+		if err != nil {
+			return "Invalid format, see /tat help"
 		}
-		msgs += fmt.Sprintf("%s %s %s %s \n",
-			m.Author.Username,
-			fmt.Sprintf("%s", time.Unix(int64(m.DateUpdate), 0).Format(time.Stamp)),
-			m.Text,
-			labels,
-		)
+		msgs += f + "\n"
 	}
 
 	return msgs
