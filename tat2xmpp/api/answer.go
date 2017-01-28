@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/mattn/go-xmpp"
+	"github.com/spf13/viper"
 
 	"github.com/ovh/tat"
 )
@@ -211,6 +212,8 @@ func random() string {
 func (bot *botClient) requestTat(in, remote string) string {
 	defaultLimit := 5
 
+	in = strings.TrimSpace(in)
+
 	help := "Invalid request. See /tat help"
 	if !strings.HasPrefix(in, "COUNT ") && !strings.HasPrefix(in, "GET ") {
 		return help
@@ -279,7 +282,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 
 	msgs += " :\n"
 	for _, m := range outmsg.Messages {
-		f, err := m.Format(format)
+		f, err := m.Format(format, viper.GetString("url_tatwebui"))
 		if err != nil {
 			return fmt.Sprintf("Invalid format "+format+", see /tat help", format)
 		}

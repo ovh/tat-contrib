@@ -135,6 +135,9 @@ func init() {
 	flags.String("admin-tat2xmpp", "", "Admin tat2xmpp admina@jabber.xxx.net,adminb@jabber.xxx.net,")
 	viper.BindPFlag("admin_tat2xmpp", flags.Lookup("admin-tat2xmpp"))
 
+	flags.String("url-tatwebui", "", "TatwebUI base URL")
+	viper.BindPFlag("url_tatwebui", flags.Lookup("url-tatwebui"))
+
 	flags.Bool("xmpp-debug", false, "XMPP Debug")
 	viper.BindPFlag("xmpp_debug", flags.Lookup("xmpp-debug"))
 
