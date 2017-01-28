@@ -69,7 +69,7 @@ Request tat:
  "/tat COUNT /Internal/Alerts?tag=NETWORK,label=open"
  "/tat GET /Internal/Alerts?tag=PUBCLOUD-serv,PUBCLOUD-host&label=open"
 
-Request tat and format return:
+Request tat and format output:
  "/tat COUNT /Internal/Alerts?tag=NETWORK,label=open format:dateUpdate,username,text"
 
 Default format:dateUpdate,username,text,labels
@@ -118,13 +118,13 @@ func random() string {
 }
 
 func (bot *botClient) requestTat(in, remote string) string {
-	help := "invalid request prefix. Use COUNT or GET. Example COUNT /YourTopic?tag=foo, see /tat help"
+	help := "Invalid request. Use COUNT or GET. Example COUNT /YourTopic?tag=foo, see /tat help"
 	if !strings.HasPrefix(in, "COUNT ") && !strings.HasPrefix(in, "GET ") {
 		return help
 	}
 
 	tuple := strings.Split(in, " ")
-	if len(tuple) != 2 || len(tuple) != 3 {
+	if len(tuple) != 2 && len(tuple) != 3 {
 		return help
 	}
 
@@ -141,7 +141,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 	if strings.Contains(topic, "?") {
 		tuple2 := strings.Split(topic, "?")
 		if len(tuple2) != 2 {
-			return "invalid request. Request have to contains ?, example COUNT, see /tat help"
+			return "Invalid request. Request have to contains ?, example COUNT, see /tat help"
 		}
 		topic = tuple2[0]
 		var errv error
