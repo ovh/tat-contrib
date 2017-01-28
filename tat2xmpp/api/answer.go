@@ -194,7 +194,7 @@ Get aliases with a specific tag : "/tat aliases atag"
 Execute an alias : "/tat !myAlias arg1 arg2"
 
 If you add a tat message, with label "common" and text:
-"#tatbot #alias #alias:alert #get:/Internal/Alerts?tag=%s&label=%s"
+"#tatbot #alias #alias:alert #get:/Internal/Alerts?tag=%s&label=%s #format:dateUpdate,text"
 you can execute it over XMPP as : "/tat !alert CD open"
 
 For a count request:
