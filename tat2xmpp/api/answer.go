@@ -163,7 +163,7 @@ func canViewAlias(isAdm bool, msg tat.Message, remote string) bool {
 	if strings.HasPrefix(msg.Topic, "/Private/") && strings.HasPrefix(remote, msg.Author.Username+"@") {
 		return true
 	}
-	return false
+	return true
 }
 
 func help() string {
