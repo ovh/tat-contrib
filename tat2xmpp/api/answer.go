@@ -119,7 +119,7 @@ func getAliases(remote string) string {
 		t = strings.Replace(t, "#alias ", "", 1)
 		t = strings.Replace(t, "#get:", "/tat GET ", 1)
 		t = strings.Replace(t, "#count:", "/tat COUNT ", 1)
-		out += fmt.Sprintf("%s by %s in topic %s\n", t, alias.Author.Username, alias.Topic)
+		out += fmt.Sprintf("%s by %s in topic %s\n------\n", t, alias.Author.Username, alias.Topic)
 	}
 	if out == "" {
 		return "no alias configured"
@@ -155,7 +155,7 @@ Default format:dateUpdate,username,text,labels
 You can use:
 id,text,topic,inReplyOfID,inReplyOfIDRoot,nbLikes,labels,
 votersUP,votersDown,nbVotesUP,nbVotesDown,userMentions,
-urls,tags,dateCreation,dateUpdate,username,fullname,nbReplies
+urls,tags,dateCreation,dateUpdate,username,fullname,nbReplies,tatwebuiURL
 
 User tat.system.jabber have to be RO on tat topic for requesting tat.
 
