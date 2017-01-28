@@ -36,7 +36,7 @@ func (bot *botClient) answer(chat xmpp.Chat) {
 }
 
 func (bot *botClient) prepareAnswer(text, short, remote string) string {
-	question := text[5:] // remove '/tat ' or 'tat, '
+	question := strings.TrimSpace(text[5:]) // remove '/tat ' or 'tat, '
 	if question == "help" {
 		return help()
 	} else if question == "tat2xmpp status" {
