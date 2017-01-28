@@ -78,6 +78,8 @@ You can use:
 id,text,topic,inReplyOfID,inReplyOfIDRoot,nbLikes,labels,
 votersUP,votersDown,nbVotesUP,nbVotesDown,userMentions,
 urls,tags,dateCreation,dateUpdate,username,fullname,nbReplies
+
+User tat.system.jabber have to be RO on tat topic for requesting tat.
 `
 }
 
