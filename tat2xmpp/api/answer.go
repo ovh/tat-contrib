@@ -126,14 +126,16 @@ func getAliases(remote, question string) string {
 			continue
 		}
 
-		found := false
-		for _, t := range alias.Labels {
-			if t.Text == filter {
-				found = true
+		if filter != "all" {
+			found := false
+			for _, t := range alias.Labels {
+				if t.Text == filter {
+					found = true
+				}
 			}
-		}
-		if !found {
-			continue
+			if !found {
+				continue
+			}
 		}
 
 		t := strings.Replace(strings.TrimSpace(alias.Text), "#tatbot ", "", 1)
@@ -145,7 +147,7 @@ func getAliases(remote, question string) string {
 	if out == "" {
 		return "no alias configured"
 	}
-	return " aliases:\n" + out
+	return " aliases:\n------\n" + out
 }
 
 func canViewAlias(isAdm bool, msg tat.Message, remote string) bool {
@@ -237,7 +239,7 @@ func (bot *botClient) requestTat(in, remote string) string {
 
 	in = strings.TrimSpace(in)
 
-	help := "Invalid request. See /tat help"
+	help := "Invalid request " + in + ". See /tat help"
 	if !strings.HasPrefix(in, "COUNT ") && !strings.HasPrefix(in, "GET ") {
 		return help
 	}
