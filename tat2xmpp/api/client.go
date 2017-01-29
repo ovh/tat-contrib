@@ -12,9 +12,25 @@ import (
 const headerXRemoteUser = "X-Remote-User"
 
 type botClient struct {
-	creation   time.Time
-	XMPPClient *xmpp.Client
-	TatClient  *tat.Client
+	creation                  time.Time
+	XMPPClient                *xmpp.Client
+	TatClient                 *tat.Client
+	nbXMPPErrors              int
+	nbXMPPErrorsAfterRetry    int
+	nbXMPPSent                int
+	nbTatErrors               int
+	nbTatSent                 int
+	nbXMPPAnswers             int
+	nbRenew                   int
+	nbTopicConfs              int
+	nbRequestsWithAlias       int
+	nbRequestsWithAliasErrors int
+	nbRequestsCountTat        int
+	nbRequestsGetTat          int
+	nbRequestsCountTatErrors  int
+	nbRequestsGetTatErrors    int
+	chats                     chan xmpp.Chat
+	aliases                   []tat.Message
 }
 
 func getBotClient(username, password string) (*botClient, error) {

@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,23 +14,19 @@ func initRoutes(router *gin.Engine) {
 	router.GET("/mon/status", func(ctx *gin.Context) {
 
 		s := http.StatusOK
-		if nbTatErrors > 10 {
-			log.Errorf("nbXMPPErrors more than 10")
-			s = http.StatusInternalServerError
-		}
 		ctx.JSON(s, gin.H{
 			"started":                tatbot.creation,
-			"nbXMPPErrors":           nbXMPPErrors,
-			"nbXMPPErrorsAfterRetry": nbXMPPErrorsAfterRetry,
-			"nbXMPPSent":             nbXMPPSent,
-			"nbXMPPAnswers":          nbXMPPAnswers,
-			"nbTatErrors":            nbTatErrors,
-			"nbTatSent":              nbTatSent,
-			"nbTopicConfs":           nbTopicConfs,
+			"nbXMPPErrors":           tatbot.nbXMPPErrors,
+			"nbXMPPErrorsAfterRetry": tatbot.nbXMPPErrorsAfterRetry,
+			"nbXMPPSent":             tatbot.nbXMPPSent,
+			"nbXMPPAnswers":          tatbot.nbXMPPAnswers,
+			"nbTatErrors":            tatbot.nbTatErrors,
+			"nbTatSent":              tatbot.nbTatSent,
+			"nbTopicConfs":           tatbot.nbTopicConfs,
 			"nbTopicConfsFilterHook": len(topicConfsFilterHook),
-			"nbRequestsCountTat":     nbRequestsCountTat,
-			"nbRequestsGetTat":       nbRequestsGetTat,
-			"nbRenew":                nbRenew,
+			"nbRequestsCountTat":     tatbot.nbRequestsCountTat,
+			"nbRequestsGetTat":       tatbot.nbRequestsGetTat,
+			"nbRenew":                tatbot.nbRenew,
 		})
 	})
 }

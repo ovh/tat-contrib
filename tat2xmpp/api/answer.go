@@ -28,12 +28,12 @@ func (bot *botClient) answer(chat xmpp.Chat) {
 		to = strings.Split(chat.Remote, "@")[0]
 	}
 
-	chats <- xmpp.Chat{
+	bot.chats <- xmpp.Chat{
 		Remote: remote,
 		Type:   typeXMPP,
 		Text:   to + ": " + bot.prepareAnswer(chat.Text, to, chat.Remote),
 	}
-	nbXMPPAnswers++
+	bot.nbXMPPAnswers++
 }
 
 func (bot *botClient) prepareAnswer(text, short, remote string) string {
@@ -42,11 +42,11 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 		return help()
 	} else if question == "tat2xmpp status" {
 		if isAdmin(remote) {
-			return getStatus()
+			return bot.getStatus()
 		}
 		return "forbidden for you " + remote
 	} else if strings.HasPrefix(question, "aliases") {
-		return getAliases(remote, question)
+		return bot.getAliases(remote, question)
 	} else if strings.HasPrefix(question, "GET ") || strings.HasPrefix(question, "COUNT ") {
 		return bot.requestTat(question, remote)
 	} else if strings.HasPrefix(question, "!") {
@@ -65,12 +65,12 @@ func (bot *botClient) prepareAnswer(text, short, remote string) string {
 }
 
 func (bot *botClient) execAlias(question, remote string) string {
-	if len(aliases) == 0 {
+	if len(bot.aliases) == 0 {
 		return fmt.Sprintf("no alias configured")
 	}
 
 	isadm := isAdmin(remote)
-	for _, alias := range aliases {
+	for _, alias := range bot.aliases {
 		if !canViewAlias(isadm, alias, remote) {
 			continue
 		}
@@ -103,24 +103,24 @@ func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) str
 	}
 	for _, tag := range msg.Tags {
 		if strings.HasPrefix(tag, "get:") {
-			nbRequestsWithAlias++
+			bot.nbRequestsWithAlias++
 			if args != "" {
 				return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format, va...), remote)
 			}
 			return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format), remote)
 		} else if strings.HasPrefix(tag, "count:") {
-			nbRequestsWithAlias++
+			bot.nbRequestsWithAlias++
 			if args != "" {
 				return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format, va...), remote)
 			}
 			return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format), remote)
 		}
 	}
-	nbRequestsWithAliasErrors++
+	bot.nbRequestsWithAliasErrors++
 	return "Invalid alias: " + msg.Text
 }
 
-func getAliases(remote, question string) string {
+func (bot *botClient) getAliases(remote, question string) string {
 
 	filter := strings.TrimSpace(strings.TrimPrefix(question, "aliases"))
 	if filter == "" {
@@ -129,7 +129,7 @@ func getAliases(remote, question string) string {
 
 	isadm := isAdmin(remote)
 	out := ""
-	for _, alias := range aliases {
+	for _, alias := range bot.aliases {
 		// for private topics, if not admin, check author of message
 		if !canViewAlias(isadm, alias, remote) {
 			continue
@@ -293,10 +293,10 @@ func (bot *botClient) requestTat(in, remote string) string {
 	out, errc := bot.TatClient.MessageCount(topic, criteria)
 	if errc != nil {
 		log.Warnf("Error requesting tat (count) for %s :%s", remote, errc)
-		nbRequestsCountTatErrors++
+		bot.nbRequestsCountTatErrors++
 		return "Error while requesting tat (count)"
 	}
-	nbRequestsCountTat++
+	bot.nbRequestsCountTat++
 
 	msgs := fmt.Sprintf("%d message%s matching request %s", out.Count, plurial(out.Count), in)
 	if strings.HasPrefix(in, "COUNT ") || out.Count == 0 {
@@ -313,10 +313,10 @@ func (bot *botClient) requestTat(in, remote string) string {
 	outmsg, errc := bot.TatClient.MessageList(topic, criteria)
 	if errc != nil {
 		log.Warnf("Error requesting tat (list) for %s :%s", remote, errc)
-		nbRequestsGetTatErrors++
+		bot.nbRequestsGetTatErrors++
 		return "Error while requesting tat: %s" + errc.Error()
 	}
-	nbRequestsGetTat++
+	bot.nbRequestsGetTat++
 
 	if len(outmsg.Messages) == 0 {
 		return msgs + " but 0 message after requesting details... strange..."
