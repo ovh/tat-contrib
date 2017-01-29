@@ -37,9 +37,10 @@ var (
 const resource = "tat"
 
 type topicConf struct {
-	topic      string
-	conference string
-	typeHook   string
+	topic            string
+	conference       string
+	typeHook         string
+	isOnlyFilterHook bool
 }
 
 var topicConfs []topicConf
@@ -85,22 +86,23 @@ func (bot *botClient) helloWorld() {
 }
 
 func getStatus() string {
+
+	stopicConfs := ""
+	for _, t := range topicConfs {
+		stopicConfs += fmt.Sprintf("%s -> %s type:%s isOnlyFilterHook:%t\n", t.topic, t.conference, t.typeHook, t.isOnlyFilterHook)
+	}
+
 	return fmt.Sprintf(`
 Tat2XMPP Status
 
 Started:%s since %s
+Admin: %s
 
 XMPP:
 - sent: %d, errors: %d, errors after retry: %d
 - renew: %d
-----
 
-Tat:
-- sent: %d, errors: %d
-- conf on topic parameter: %d
-- conf with filterHook: %d
 ----
-
 Bot:
 - answers: %d
 - aliases: %d
@@ -108,21 +110,31 @@ Bot:
 - get on tat: %d, errors:%d
 - aliases used:%d, errors:%d
 
+----
+Tat:
+- sent: %d, errors: %d
+- conf on topic parameter: %d
+- conf with filterHook: %d
+- confs:
+%s
+
 `,
 		tatbot.creation, time.Now().Sub(tatbot.creation),
+		viper.GetString("admin_tat2xmpp"),
 		//-- xmpp
 		nbXMPPSent, nbXMPPErrors, nbXMPPErrorsAfterRetry,
 		nbRenew,
-		//-- tat
-		nbTatSent, nbTatErrors,
-		nbTopicConfs,
-		len(topicConfsFilterHook),
 		//-- bot
 		nbXMPPAnswers,
 		len(aliases),
 		nbRequestsCountTat, nbRequestsCountTatErrors,
 		nbRequestsGetTat, nbRequestsGetTatErrors,
 		nbRequestsWithAlias, nbRequestsWithAliasErrors,
+		//-- tat
+		nbTatSent, nbTatErrors,
+		nbTopicConfs,
+		len(topicConfsFilterHook),
+		stopicConfs,
 	)
 }
 
@@ -345,9 +357,10 @@ func hookProcess(hook tat.HookJSON) {
 		if presenceToSend {
 			log.Debugf("hookJSON> presenceToSend Add t:%s c:%s t:%s", hook.HookMessage.MessageJSONOut.Message.Topic, destination, hook.Hook.Type)
 			topicConfsFilterHook = append(topicConfsFilterHook, topicConf{
-				topic:      hook.HookMessage.MessageJSONOut.Message.Topic,
-				conference: destination,
-				typeHook:   hook.Hook.Type,
+				topic:            hook.HookMessage.MessageJSONOut.Message.Topic,
+				conference:       destination,
+				typeHook:         hook.Hook.Type,
+				isOnlyFilterHook: true,
 			})
 
 			tatbot.renewXMPP()
