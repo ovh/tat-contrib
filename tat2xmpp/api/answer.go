@@ -17,15 +17,13 @@ func (bot *botClient) answer(chat xmpp.Chat) {
 
 	typeXMPP := getTypeChat(chat.Remote)
 	remote := chat.Remote
-	to := chat.Remote
+	to := strings.Split(chat.Remote, "@")[0]
 	if typeXMPP == "groupchat" {
 		if strings.Contains(chat.Remote, "/") {
 			t := strings.Split(chat.Remote, "/")
 			remote = t[0]
 			to = t[1]
 		}
-	} else {
-		to = strings.Split(chat.Remote, "@")[0]
 	}
 
 	bot.chats <- xmpp.Chat{

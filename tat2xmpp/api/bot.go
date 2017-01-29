@@ -241,11 +241,6 @@ func (bot *botClient) receive() {
 			if !isError {
 				bot.receiveMsg(v)
 			}
-
-			/* Code for presence case xmpp.Presence:
-			fmt.Printf("Receive pres from jabb :%s\n", v)
-			fmt.Println(v.From, v.Show)
-			*/
 		}
 	}
 }
@@ -268,12 +263,6 @@ func getTypeChat(s string) string {
 
 func (bot *botClient) receiveMsg(chat xmpp.Chat) {
 	log.Debugf("receiveMsg >> enter remote:%s text:%s", chat.Remote, chat.Text)
-	/*
-		chat.Stamp.Unix() contains... something wrong.
-		if chat.Stamp.Unix() < bot.creation.Unix() {
-			log.Debugf("receiveMsg >> exit, bot is starting... chat ts:%s, bot.creation:%s", chat.Stamp, bot.creation)
-			return
-		}*/
 	if time.Now().Add(-10*time.Second).Unix() < bot.creation.Unix() {
 		log.Debugf("receiveMsg >> exit, bot is starting... ")
 		return
