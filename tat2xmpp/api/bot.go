@@ -54,18 +54,16 @@ func (bot *botClient) born() {
 }
 
 func (bot *botClient) helloWorld() {
-	if viper.GetString("xmpp_hello_world") == "" {
-		log.Infof("helloWorld >> param xmpp-hello-world is empty")
-		return
+	for _, a := range bot.admins {
+		log.Infof("helloWorld >> sending hello world to %s", a)
+
+		bot.chats <- xmpp.Chat{
+			Remote: a,
+			Type:   "chat",
+			Text:   fmt.Sprintf("Hi, I'm Tat2XMPP, what a good day to be alive"),
+		}
 	}
 
-	log.Infof("helloWorld >> sending hello world to %s", viper.GetString("xmpp_hello_world"))
-
-	bot.chats <- xmpp.Chat{
-		Remote: viper.GetString("xmpp_hello_world"),
-		Type:   "chat",
-		Text:   fmt.Sprintf("Hi, I'm Tat2XMPP, what a good day to be alive"),
-	}
 }
 
 func (bot *botClient) getStatus() string {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -31,6 +32,7 @@ type botClient struct {
 	nbRequestsGetTatErrors    int
 	chats                     chan xmpp.Chat
 	aliases                   []tat.Message
+	admins                    []string
 }
 
 func getBotClient(username, password string) (*botClient, error) {
@@ -53,9 +55,14 @@ func getBotClient(username, password string) (*botClient, error) {
 		log.Errorf("getClient >> error with getNewXMPPClient err:%s", err)
 		return nil, err
 	}
+
+	admins = strings.Split(viper.GetString("admin_tat2xmpp"), ",")
+	log.Infof("admin configured:%+v", admins)
+
 	instance := &botClient{
 		TatClient:  tc,
 		XMPPClient: xClient,
+		admins:     admins,
 	}
 
 	return instance, nil
