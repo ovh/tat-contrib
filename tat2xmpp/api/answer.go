@@ -329,6 +329,11 @@ func (bot *botClient) requestTat(in, remote string) string {
 		msgs += f + "\n"
 	}
 
+	if viper.GetString("url_tatwebui") != "" {
+		path := fmt.Sprintf("%s%s?%s", viper.GetString("url_tatwebui"), topic, criteria.GetURL())
+		msgs += "See on tatwebui: " + path
+	}
+
 	return msgs
 }
 
