@@ -80,13 +80,44 @@ func (bot *botClient) helloWorld() {
 	chats <- xmpp.Chat{
 		Remote: viper.GetString("xmpp_hello_world"),
 		Type:   "chat",
-		Text:   fmt.Sprintf("Hi, I'm tat2xmpp, what a good day to be alive"),
+		Text:   fmt.Sprintf("Hi, I'm Tat2XMPP, what a good day to be alive"),
 	}
 }
 
 func getStatus() string {
-	return fmt.Sprintf("tat2xmpp-status>> started:%s\n nbXMPPErrors:%d\n nbXMPPErrorsAfterRetry:%d\n nbXMPPSent:%d\n nbXMPPAnswers:%d\n nbTatErrors:%d\n nbTatSent:%d\n nbTopicConfs:%d\n nbTopicConfsFilterHook:%d\n renew:%d\n nbRequestsCountTat:%d\n nbRequestsGetTat:%d nbRequestsCountTatErrors:%d\n nbRequestsGetTatErrors:%d nbRequestsWithAlias:%d nbRequestsWithAlias:%d nbRequestsWithAliasErrors:%d nbAliases:%d\n",
-		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbXMPPAnswers, nbTatErrors, nbTatSent, nbTopicConfs, len(topicConfsFilterHook), nbRenew, nbRequestsCountTat, nbRequestsGetTat, nbRequestsCountTatErrors, nbRequestsGetTatErrors, nbRequestsWithAlias, nbRequestsWithAlias, nbRequestsWithAliasErrors, len(aliases))
+	return fmt.Sprintf(`Tat2XMPP Status
+Started:%s since %s
+
+XMPP:
+- sent: %d errors: %d errors after Retry: %d
+- renew: %d
+----
+
+Tat:
+- sent: %d errors: %d
+- conf on topic parameter: %d
+- conf with filterHook: %d
+----
+
+Bot:
+- answers: %d
+- aliases: %d
+- count on tat: %d errors:%d
+- get on tat: %d errors:%d
+- aliases used:%d: errors:%d
+
+`,
+		tatbot.creation, time.Now().Sub(tatbot.creation),
+		nbXMPPSent, nbXMPPErrors, nbXMPPErrorsAfterRetry,
+		nbRenew,
+		nbTatSent, nbTatErrors,
+		nbTopicConfs, len(topicConfsFilterHook),
+		len(aliases),
+		nbXMPPAnswers,
+		nbRequestsCountTat, nbRequestsCountTatErrors,
+		nbRequestsGetTat, nbRequestsGetTatErrors,
+		nbRequestsWithAlias, nbRequestsWithAliasErrors,
+	)
 }
 
 func status() {
