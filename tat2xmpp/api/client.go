@@ -56,14 +56,13 @@ func getBotClient(username, password string) (*botClient, error) {
 		return nil, err
 	}
 
-	admins = strings.Split(viper.GetString("admin_tat2xmpp"), ",")
-	log.Infof("admin configured:%+v", admins)
-
 	instance := &botClient{
 		TatClient:  tc,
 		XMPPClient: xClient,
-		admins:     admins,
+		admins:     strings.Split(viper.GetString("admin_tat2xmpp"), ","),
 	}
+
+	log.Infof("admin configured:%+v", instance.admins)
 
 	return instance, nil
 }

@@ -17,7 +17,6 @@ import (
 const VERSION = "0.6.0"
 
 var configFile string
-var admins []string
 
 var mainCmd = &cobra.Command{
 	Use:   "tat2xmpp",
