@@ -15,19 +15,23 @@ import (
 )
 
 var (
-	tatbot                 *botClient
-	nbXMPPErrors           int
-	nbXMPPErrorsAfterRetry int
-	nbXMPPSent             int
-	nbTatErrors            int
-	nbTatSent              int
-	nbXMPPAnswers          int
-	nbRenew                int
-	nbTopicConfs           int
-	nbRequestsCountTat     int
-	nbRequestsGetTat       int
-	chats                  chan xmpp.Chat
-	aliases                []tat.Message
+	tatbot                    *botClient
+	nbXMPPErrors              int
+	nbXMPPErrorsAfterRetry    int
+	nbXMPPSent                int
+	nbTatErrors               int
+	nbTatSent                 int
+	nbXMPPAnswers             int
+	nbRenew                   int
+	nbTopicConfs              int
+	nbRequestsWithAlias       int
+	nbRequestsWithAliasErrors int
+	nbRequestsCountTat        int
+	nbRequestsGetTat          int
+	nbRequestsCountTatErrors  int
+	nbRequestsGetTatErrors    int
+	chats                     chan xmpp.Chat
+	aliases                   []tat.Message
 )
 
 const resource = "tat"
@@ -81,8 +85,8 @@ func (bot *botClient) helloWorld() {
 }
 
 func getStatus() string {
-	return fmt.Sprintf("tat2xmpp-status>> started:%s\n nbXMPPErrors:%d\n nbXMPPErrorsAfterRetry:%d\n nbXMPPSent:%d\n nbXMPPAnswers:%d\n nbTatErrors:%d\n nbTatSent:%d\n nbTopicConfs:%d\n nbTopicConfsFilterHook:%d\n renew:%d\n nbRequestsCountTat:%d\n nbRequestsGetTat:%d\n",
-		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbXMPPAnswers, nbTatErrors, nbTatSent, nbTopicConfs, len(topicConfsFilterHook), nbRenew, nbRequestsCountTat, nbRequestsGetTat)
+	return fmt.Sprintf("tat2xmpp-status>> started:%s\n nbXMPPErrors:%d\n nbXMPPErrorsAfterRetry:%d\n nbXMPPSent:%d\n nbXMPPAnswers:%d\n nbTatErrors:%d\n nbTatSent:%d\n nbTopicConfs:%d\n nbTopicConfsFilterHook:%d\n renew:%d\n nbRequestsCountTat:%d\n nbRequestsGetTat:%d nbRequestsCountTatErrors:%d\n nbRequestsGetTatErrors:%d nbRequestsWithAlias:%d nbRequestsWithAlias:%d nbRequestsWithAliasErrors:%d nbAliases:%d\n",
+		tatbot.creation, nbXMPPErrors, nbXMPPErrorsAfterRetry, nbXMPPSent, nbXMPPAnswers, nbTatErrors, nbTatSent, nbTopicConfs, len(topicConfsFilterHook), nbRenew, nbRequestsCountTat, nbRequestsGetTat, nbRequestsCountTatErrors, nbRequestsGetTatErrors, nbRequestsWithAlias, nbRequestsWithAlias, nbRequestsWithAliasErrors, len(aliases))
 }
 
 func status() {

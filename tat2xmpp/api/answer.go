@@ -103,17 +103,20 @@ func (bot *botClient) execAliasRequest(msg tat.Message, remote, args string) str
 	}
 	for _, tag := range msg.Tags {
 		if strings.HasPrefix(tag, "get:") {
+			nbRequestsWithAlias++
 			if args != "" {
 				return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format, va...), remote)
 			}
 			return bot.requestTat(fmt.Sprintf("GET "+tag[4:]+" "+format), remote)
 		} else if strings.HasPrefix(tag, "count:") {
+			nbRequestsWithAlias++
 			if args != "" {
 				return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format, va...), remote)
 			}
 			return bot.requestTat(fmt.Sprintf("COUNT "+tag[6:]+" "+format), remote)
 		}
 	}
+	nbRequestsWithAliasErrors++
 	return "Invalid alias: " + msg.Text
 }
 
@@ -288,8 +291,10 @@ func (bot *botClient) requestTat(in, remote string) string {
 	out, errc := bot.TatClient.MessageCount(topic, criteria)
 	if errc != nil {
 		log.Warnf("Error requesting tat (count) for %s :%s", remote, errc)
+		nbRequestsCountTatErrors++
 		return "Error while requesting tat (count)"
 	}
+	nbRequestsCountTat++
 
 	msgs := fmt.Sprintf("%d message%s matching request %s", out.Count, plurial(out.Count), in)
 	if strings.HasPrefix(in, "COUNT ") || out.Count == 0 {
@@ -300,8 +305,10 @@ func (bot *botClient) requestTat(in, remote string) string {
 	outmsg, errc := bot.TatClient.MessageList(topic, criteria)
 	if errc != nil {
 		log.Warnf("Error requesting tat (list) for %s :%s", remote, errc)
+		nbRequestsGetTatErrors++
 		return "Error while requesting tat: %s" + errc.Error()
 	}
+	nbRequestsGetTat++
 
 	if len(outmsg.Messages) == 0 {
 		return msgs + " but 0 message after requesting details... strange..."
