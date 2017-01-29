@@ -138,6 +138,9 @@ func init() {
 	flags.String("url-tatwebui", "", "TatwebUI base URL")
 	viper.BindPFlag("url_tatwebui", flags.Lookup("url-tatwebui"))
 
+	flags.String("more-help", "", "Text added on /tat help")
+	viper.BindPFlag("more_help", flags.Lookup("more-help"))
+
 	flags.Bool("xmpp-debug", false, "XMPP Debug")
 	viper.BindPFlag("xmpp_debug", flags.Lookup("xmpp-debug"))
 

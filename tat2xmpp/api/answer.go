@@ -170,7 +170,7 @@ func canViewAlias(isAdm bool, msg tat.Message, remote string) bool {
 }
 
 func help() string {
-	return `
+	out := `
 Begin conversation with "tat," or "/tat"
 
 Simple request: "tat, ping"
@@ -205,6 +205,8 @@ For a count request:
 you can execute it over XMPP as : "/tat !alert.count CD open"
 
 `
+
+	return out + viper.GetString("more_help")
 }
 
 func isAdmin(r string) bool {
