@@ -85,16 +85,18 @@ func (bot *botClient) helloWorld() {
 }
 
 func getStatus() string {
-	return fmt.Sprintf(`Tat2XMPP Status
+	return fmt.Sprintf(`
+Tat2XMPP Status
+
 Started:%s since %s
 
 XMPP:
-- sent: %d errors: %d errors after Retry: %d
+- sent: %d, errors: %d, errors after retry: %d
 - renew: %d
 ----
 
 Tat:
-- sent: %d errors: %d
+- sent: %d, errors: %d
 - conf on topic parameter: %d
 - conf with filterHook: %d
 ----
@@ -102,18 +104,22 @@ Tat:
 Bot:
 - answers: %d
 - aliases: %d
-- count on tat: %d errors:%d
-- get on tat: %d errors:%d
-- aliases used:%d: errors:%d
+- count on tat: %d, errors:%d
+- get on tat: %d, errors:%d
+- aliases used:%d, errors:%d
 
 `,
 		tatbot.creation, time.Now().Sub(tatbot.creation),
+		//-- xmpp
 		nbXMPPSent, nbXMPPErrors, nbXMPPErrorsAfterRetry,
 		nbRenew,
+		//-- tat
 		nbTatSent, nbTatErrors,
-		nbTopicConfs, len(topicConfsFilterHook),
-		len(aliases),
+		nbTopicConfs,
+		len(topicConfsFilterHook),
+		//-- bot
 		nbXMPPAnswers,
+		len(aliases),
 		nbRequestsCountTat, nbRequestsCountTatErrors,
 		nbRequestsGetTat, nbRequestsGetTatErrors,
 		nbRequestsWithAlias, nbRequestsWithAliasErrors,
