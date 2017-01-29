@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
+	"text/template"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -66,6 +68,34 @@ func (bot *botClient) helloWorld() {
 
 }
 
+const status = `
+Tat2XMPP Status
+
+Started: {{.started}} since {{.since}}
+Admin: {{.admin}}
+
+XMPP:
+- sent: {{.nbXMPPSent}}, errors: {{.nbXMPPErrors}}, errors after retry: {{.nbXMPPErrorsAfterRetry}}
+- renew: {{.nbRenew}}
+
+----
+Bot:
+- answers: {{.nbXMPPAnswers}}
+- aliases: {{.aliases}}
+- count on tat: {{.nbRequestsCountTat}}, errors: {{.nbRequestsCountTatErrors}}
+- get on tat: {{.nbRequestsGetTat}}, errors: {{.nbRequestsGetTatErrors}}
+- aliases used: {{.nbRequestsWithAlias}}, errors: {{.nbRequestsWithAliasErrors}}
+
+----
+Tat:
+- sent: {{.nbTatSent}}, errors: {{.nbTatErrors}}
+- conf on topic parameter: {{.nbTopicConfsFilterHook}}
+- conf with filterHook:
+- confs:
+{{.stopicConfs}}
+
+`
+
 func (bot *botClient) getStatus() string {
 
 	stopicConfs := ""
@@ -73,50 +103,45 @@ func (bot *botClient) getStatus() string {
 		stopicConfs += fmt.Sprintf("%s -> %s type:%s isOnlyFilterHook:%t\n", t.topic, t.conference, t.typeHook, t.isOnlyFilterHook)
 	}
 
-	return fmt.Sprintf(`
-Tat2XMPP Status
-
-Started:%s since %s
-Admin: %s
-
-XMPP:
-- sent: %d, errors: %d, errors after retry: %d
-- renew: %d
-
-----
-Bot:
-- answers: %d
-- aliases: %d
-- count on tat: %d, errors:%d
-- get on tat: %d, errors:%d
-- aliases used:%d, errors:%d
-
-----
-Tat:
-- sent: %d, errors: %d
-- conf on topic parameter: %d
-- conf with filterHook: %d
-- confs:
-%s
-
-`,
-		tatbot.creation, time.Now().Sub(tatbot.creation),
-		viper.GetString("admin_tat2xmpp"),
+	data := map[string]string{
+		"started": fmt.Sprintf("%s", tatbot.creation),
+		"since":   fmt.Sprintf("%s", time.Now().Sub(tatbot.creation)),
+		"admin":   viper.GetString("admin_tat2xmpp"),
 		//-- xmpp
-		bot.nbXMPPSent, bot.nbXMPPErrors, bot.nbXMPPErrorsAfterRetry,
-		bot.nbRenew,
+		"nbXMPPSent":             fmt.Sprintf("%d", bot.nbXMPPSent),
+		"nbXMPPErrors":           fmt.Sprintf("%d", bot.nbXMPPErrors),
+		"nbXMPPErrorsAfterRetry": fmt.Sprintf("%d", bot.nbXMPPErrorsAfterRetry),
+		"nbRenew":                fmt.Sprintf("%d", bot.nbRenew),
 		//-- bot
-		bot.nbXMPPAnswers,
-		len(bot.aliases),
-		bot.nbRequestsCountTat, bot.nbRequestsCountTatErrors,
-		bot.nbRequestsGetTat, bot.nbRequestsGetTatErrors,
-		bot.nbRequestsWithAlias, bot.nbRequestsWithAliasErrors,
+		"nbXMPPAnswers":             fmt.Sprintf("%d", bot.nbXMPPAnswers),
+		"aliases":                   fmt.Sprintf("%d", len(bot.aliases)),
+		"nbRequestsCountTat":        fmt.Sprintf("%d", bot.nbRequestsCountTat),
+		"nbRequestsCountTatErrors":  fmt.Sprintf("%d", bot.nbRequestsCountTatErrors),
+		"nbRequestsGetTat":          fmt.Sprintf("%d", bot.nbRequestsGetTat),
+		"nbRequestsGetTatErrors":    fmt.Sprintf("%d", bot.nbRequestsGetTatErrors),
+		"nbRequestsWithAlias":       fmt.Sprintf("%d", bot.nbRequestsWithAlias),
+		"nbRequestsWithAliasErrors": fmt.Sprintf("%d", bot.nbRequestsWithAliasErrors),
 		//-- tat
-		bot.nbTatSent, bot.nbTatErrors,
-		bot.nbTopicConfs,
-		len(topicConfsFilterHook),
-		stopicConfs,
-	)
+		"nbTatSent":              fmt.Sprintf("%d", bot.nbTatSent),
+		"nbTatErrors":            fmt.Sprintf("%d", bot.nbTatErrors),
+		"nbTopicConfs":           fmt.Sprintf("%d", bot.nbTopicConfs),
+		"nbTopicConfsFilterHook": fmt.Sprintf("%d", len(topicConfsFilterHook)),
+		"stopicConfs":            stopicConfs,
+	}
+
+	t, errp := template.New("status").Parse(status)
+	if errp != nil {
+		log.Errorf("getStatus> Error:%s", errp.Error())
+		return "Error while prepare status:" + errp.Error()
+	}
+
+	var buffer bytes.Buffer
+	if err := t.Execute(&buffer, data); err != nil {
+		log.Errorf("getStatus> Error:%s", errp.Error())
+		return "Error while prepare status (execute):" + err.Error()
+	}
+
+	return buffer.String()
 }
 
 func (bot *botClient) renewXMPP() {
