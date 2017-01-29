@@ -300,6 +300,10 @@ func (bot *botClient) requestTat(in, remote string) string {
 
 	msgs := fmt.Sprintf("%d message%s matching request %s", out.Count, plurial(out.Count), in)
 	if strings.HasPrefix(in, "COUNT ") || out.Count == 0 {
+		if viper.GetString("url_tatwebui") != "" {
+			path := fmt.Sprintf("%s%s?%s", viper.GetString("url_tatwebui"), topic, criteria.GetURL())
+			msgs += "\nSee on tatwebui: " + path
+		}
 		return msgs
 	}
 
