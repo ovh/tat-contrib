@@ -11,6 +11,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+// VERSION ...
 const VERSION = "1.0.0"
 
 var mainCmd = &cobra.Command{

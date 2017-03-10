@@ -254,19 +254,7 @@ func extract(rsp imap.Response) *TatMail {
 		tm.MessageID = hash(extractWord(mmsg.Header.Get("Message-ID")))
 
 		//date := "Fri, 1 Jul 2016 14:31:48 +0000"
-		date := strings.Trim(mmsg.Header.Get("Date"), " ")
-		t, errt := time.Parse("Mon, 2 Jan 2006 15:04:05 -0700", date)
-		if errt == nil {
-			tm.Date = t
-		} else {
-			t2, errt2 := time.Parse("Mon, 2 Jan 2006 15:04:05 -0700 (CEST)", date)
-			if errt2 == nil {
-				tm.Date = t2
-			} else {
-				log.Errorf("Error while converting date:%s", errt.Error())
-				tm.Date = time.Now()
-			}
-		}
+		tm.Date = parseDate(mmsg.Header.Get("Date"))
 		tm.UID = uid
 	}
 
@@ -310,4 +298,29 @@ func extract(rsp imap.Response) *TatMail {
 		log.Debugf("stepF, tm.Body is ok")
 	}
 	return tm
+}
+
+func parseDate(s string) time.Time {
+	date := strings.Trim(s, " ")
+	t, errt := time.Parse("Mon, 2 Jan 2006 15:04:05 -0700", date)
+	if errt == nil {
+		return t
+	}
+	if t, err := parseDateTZ(date, "CEST"); err == nil {
+		return t
+	}
+	if t, err := parseDateTZ(date, "UTC"); err == nil {
+		return t
+	}
+	t2, errt2 := time.Parse("Mon, 2 Jan 2006 15:04:05 -0700 (CEST)", date)
+	if errt2 == nil {
+		return t2
+	}
+
+	log.Warnf("Error while converting date:%s, return time.Now", errt.Error())
+	return time.Now()
+}
+
+func parseDateTZ(s, tz string) (time.Time, error) {
+	return time.Parse(fmt.Sprintf("Mon, 2 Jan 2006 15:04:05 -0700 (%s)", tz), s)
 }
