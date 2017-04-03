@@ -174,11 +174,11 @@ Begin conversation with "tat," or "/tat"
 Simple request: "tat, ping"
 
 Request tat:
- "/tat COUNT /Internal/Alerts?tag=NETWORK,label=open"
+ "/tat COUNT /Internal/Alerts?tag=NETWORK&label=open"
  "/tat GET /Internal/Alerts?tag=PUBCLOUD-serv,PUBCLOUD-host&label=open"
 
 Request tat and format output:
- "/tat COUNT /Internal/Alerts?tag=NETWORK,label=open format:dateUpdate,username,text"
+ "/tat COUNT /Internal/Alerts?tag=NETWORK&label=open format:dateUpdate,username,text"
 
 Default format:dateUpdate,username,text,labels
 
