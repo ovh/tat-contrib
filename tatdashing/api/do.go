@@ -22,7 +22,7 @@ func run() {
 
 func do() {
 
-	topics, err := getClient().TopicList(&tat.TopicCriteria{Skip: 0, Limit: 100})
+	topics, err := getClient().TopicList(&tat.TopicCriteria{Skip: 0, Limit: 1000})
 	if err != nil {
 		log.Errorf("Error with topic list %s", err.Error())
 		return
