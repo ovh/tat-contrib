@@ -123,7 +123,7 @@ func doMessage(msg tat.Message) {
 				for _, k := range keys {
 					tuple := strings.Split(k, ":")
 					label = tuple[0]
-					value = fmt.Sprintf("%s ", values[k])
+					value = fmt.Sprintf("%s", values[k])
 				}
 				toAdd = true
 				labels = append(labels, tat.Label{Text: fmt.Sprintf("%s:%s", label, value)})
