@@ -75,7 +75,7 @@ Started: {{.started}} since {{.since}}
 Admin: {{.admin}}
 
 XMPP:
-- sent: {{.nbXMPPSent}}, errors: {{.nbXMPPErrors}}, errors after retry: {{.nbXMPPErrorsAfterRetry}}
+- Before send: {{.nbXMPPBeforeSend}}, sent: {{.nbXMPPSent}}, errors: {{.nbXMPPErrors}}, errors after retry: {{.nbXMPPErrorsAfterRetry}}
 - renew: {{.nbRenew}}
 
 ----
@@ -108,6 +108,7 @@ func (bot *botClient) getStatus() string {
 		"since":   fmt.Sprintf("%s", time.Now().Sub(tatbot.creation)),
 		"admin":   viper.GetString("admin_tat2xmpp"),
 		//-- xmpp
+		"nbXMPPBeforeSend":       fmt.Sprintf("%d", bot.nbXMPPBeforeSend),
 		"nbXMPPSent":             fmt.Sprintf("%d", bot.nbXMPPSent),
 		"nbXMPPErrors":           fmt.Sprintf("%d", bot.nbXMPPErrors),
 		"nbXMPPErrorsAfterRetry": fmt.Sprintf("%d", bot.nbXMPPErrorsAfterRetry),
@@ -206,7 +207,7 @@ func (bot *botClient) getAlias(topic string) []tat.Message {
 func (bot *botClient) sendToXMPP() {
 	for {
 		bot.XMPPClient.Send(<-bot.chats)
-		time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Second)
+		time.Sleep(time.Duration(viper.GetInt("xmpp_delay")) * time.Millisecond)
 	}
 }
 
@@ -391,6 +392,13 @@ func hookProcess(hook tat.HookJSON) {
 		text = fmt.Sprintf("%s (%s)", text, labelsTxt)
 	}
 
+	tatbot.nbXMPPBeforeSend++
+	messagesWaiting := tatbot.nbXMPPBeforeSend - tatbot.nbXMPPSent
+	if messagesWaiting >= viper.GetInt("xmpp_stacking_warn") {
+		log.Warnf("Too much messages are waiting in queue (%d) ! (log triggered because the limit of %d messages max waiting to be sent has been crossed)",
+			messagesWaiting,
+			viper.GetInt("xmpp_stacking_warn"))
+	}
 	tatbot.chats <- xmpp.Chat{
 		Remote: destination,
 		Type:   typeXMPP,

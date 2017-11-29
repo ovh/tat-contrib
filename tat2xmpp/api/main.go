@@ -148,8 +148,11 @@ func init() {
 	flags.Bool("xmpp-insecure-skip-verify", true, "XMPP InsecureSkipVerify")
 	viper.BindPFlag("xmpp_insecure_skip_verify", flags.Lookup("xmpp-insecure-skip-verify"))
 
-	flags.Int("xmpp-delay", 5, "Delay between two sent messages")
+	flags.Int("xmpp-delay", 5000, "Delay between two sent messages (in milliseconds)")
 	viper.BindPFlag("xmpp_delay", flags.Lookup("xmpp-delay"))
+
+	flags.Int("xmpp-stacking-warn", 10, "Level of the number of messages waiting to be sent from which a warning will be triggered")
+	viper.BindPFlag("xmpp_stacking_warn", flags.Lookup("xmpp-stacking-warn"))
 
 	mainCmd.PersistentFlags().StringVarP(&configFile, "configFile", "c", "", "configuration file")
 }
