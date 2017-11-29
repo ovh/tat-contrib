@@ -18,6 +18,7 @@ func initRoutes(router *gin.Engine) {
 			"started":                tatbot.creation,
 			"nbXMPPErrors":           tatbot.nbXMPPErrors,
 			"nbXMPPErrorsAfterRetry": tatbot.nbXMPPErrorsAfterRetry,
+			"nbXMPPBeforeSend":       tatbot.nbXMPPBeforeSend,
 			"nbXMPPSent":             tatbot.nbXMPPSent,
 			"nbXMPPAnswers":          tatbot.nbXMPPAnswers,
 			"nbTatErrors":            tatbot.nbTatErrors,

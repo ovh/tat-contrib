@@ -18,6 +18,7 @@ type botClient struct {
 	TatClient                 *tat.Client
 	nbXMPPErrors              int
 	nbXMPPErrorsAfterRetry    int
+	nbXMPPBeforeSend		  int
 	nbXMPPSent                int
 	nbTatErrors               int
 	nbTatSent                 int
