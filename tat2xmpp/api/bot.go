@@ -394,9 +394,7 @@ func hookProcess(hook tat.HookJSON) {
 
 	tatbot.nbXMPPBeforeSend++
 	messagesWaiting := tatbot.nbXMPPBeforeSend - tatbot.nbXMPPSent
-	log.Warnf("TAT2XMPP - BEFORE SEND nbXMPPBeforeSend", tatbot.nbXMPPBeforeSend)
-	log.Warnf("TAT2XMPP - BEFORE SEND nbXMPPSent", tatbot.nbXMPPSent)
-	log.Warnf("TAT2XMPP - BEFORE SEND messagesWaiting", messagesWaiting)
+	log.Debugf("TAT2XMPP - BEFORE SEND nbXMPPBeforeSend: %d, nbXMPPSent: %d, messagesWaiting: %d", tatbot.nbXMPPBeforeSend, tatbot.nbXMPPSent, messagesWaiting)
 	if messagesWaiting >= viper.GetInt("xmpp_stacking_warn") {
 		log.Warnf("Too much messages are waiting in queue (%d) ! (log triggered because the limit of %d messages max waiting to be sent has been crossed)",
 			messagesWaiting,
@@ -408,9 +406,7 @@ func hookProcess(hook tat.HookJSON) {
 		Text:   text,
 	}
 	tatbot.nbXMPPSent++
-	log.Warnf("TAT2XMPP - AFTER SEND nbXMPPBeforeSend", tatbot.nbXMPPBeforeSend)
-	log.Warnf("TAT2XMPP - AFTER SEND nbXMPPSent", tatbot.nbXMPPSent)
-	log.Warnf("TAT2XMPP - AFTER SEND messagesWaiting", messagesWaiting)
+	log.Debugf("TAT2XMPP - AFTER SEND nbXMPPBeforeSend: %d, nbXMPPSent: %d, messagesWaiting: %d", tatbot.nbXMPPBeforeSend, tatbot.nbXMPPSent, messagesWaiting)
 }
 
 func getHeader(ctx *gin.Context, headerName string) string {
