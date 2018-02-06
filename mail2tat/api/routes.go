@@ -18,6 +18,6 @@ func initRoutes(router *gin.Engine) {
 		ctx.JSON(http.StatusOK, gin.H{"result": "success"})
 	})
 	router.GET("/version", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{"version": VERSION})
+		ctx.JSON(http.StatusOK, gin.H{"version": Version})
 	})
 }

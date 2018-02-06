@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// VERSION is version of tat2xmpp.
-const VERSION = "0.6.0"
+// Version is version of tat2xmpp.
+var Version string
 
 var configFile string
 

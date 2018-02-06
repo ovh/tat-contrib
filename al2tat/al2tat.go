@@ -56,9 +56,9 @@ var versionCmd = &cobra.Command{
 	Long:  "The version of Al2Tat.",
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionNewLine {
-			fmt.Println(controllers.VERSION)
+			fmt.Println(controllers.Version)
 		} else {
-			fmt.Print(controllers.VERSION)
+			fmt.Print(controllers.Version)
 		}
 	},
 }

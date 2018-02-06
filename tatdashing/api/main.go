@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// VERSION is version of tat2xmpp.
-const VERSION = "0.1.0"
+// Version is version of tat2xmpp.
+var Version string
 
 var mainCmd = &cobra.Command{
 	Use:   "tatdashing",
@@ -44,7 +44,7 @@ var mainCmd = &cobra.Command{
 
 		router.GET("/version", func(c *gin.Context) {
 			log.Debugf("IN VERSION")
-			c.JSON(http.StatusOK, gin.H{"version": VERSION})
+			c.JSON(http.StatusOK, gin.H{"version": Version})
 		})
 
 		router.Use(cors.Middleware(cors.Config{

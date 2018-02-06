@@ -20,7 +20,7 @@ func getClient() *tat.Client {
 		URL:      viper.GetString("url_tat_engine"),
 		Username: viper.GetString("username_tat_engine"),
 		Password: viper.GetString("password_tat_engine"),
-		Referer:  "tat2es.v." + VERSION,
+		Referer:  "tat2es.v." + Version,
 	})
 
 	if err != nil {

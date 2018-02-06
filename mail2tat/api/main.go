@@ -11,8 +11,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-// VERSION ...
-const VERSION = "1.0.0"
+// Version ...
+var Version string
 
 var mainCmd = &cobra.Command{
 	Use:   "mail2tat",
