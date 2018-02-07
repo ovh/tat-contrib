@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// VERSION ...
-const VERSION = "0.1.0"
+// Version ...
+var Version string
 
 var mainCmd = &cobra.Command{
 	Use:   "tat-uservice-example",
@@ -55,7 +55,7 @@ var mainCmd = &cobra.Command{
 		}))
 
 		router.GET("/version", func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, gin.H{"version": VERSION})
+			ctx.JSON(http.StatusOK, gin.H{"version": Version})
 		})
 
 		s := &http.Server{
@@ -82,7 +82,7 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version.",
 	Long:  "The version of tat-uservice-example-cron.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Print(VERSION)
+		fmt.Print(Version)
 	},
 }
 

@@ -18,7 +18,7 @@ type botClient struct {
 	TatClient                 *tat.Client
 	nbXMPPErrors              int
 	nbXMPPErrorsAfterRetry    int
-	nbXMPPBeforeSend		  int
+	nbXMPPBeforeSend          int
 	nbXMPPSent                int
 	nbTatErrors               int
 	nbTatSent                 int
@@ -42,7 +42,7 @@ func getBotClient(username, password string) (*botClient, error) {
 		URL:      viper.GetString("url_tat_engine"),
 		Username: username,
 		Password: password,
-		Referer:  "tat2xmpp.v." + VERSION,
+		Referer:  "tat2xmpp.v." + Version,
 	})
 
 	if err != nil {
