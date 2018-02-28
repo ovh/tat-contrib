@@ -13,3 +13,4 @@ config.json.dev
 .DS_Store
 bower.json
 al2tat
+/tests_results.xml
