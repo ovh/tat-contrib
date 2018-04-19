@@ -36,7 +36,7 @@ func do() {
 }
 
 func doTopic(topic tat.Topic) {
-	messages, err := getClient().MessageList(topic.Topic, &tat.MessageCriteria{Skip: 0, Limit: 100, AndTag: "TatDashing", TreeView: tat.TreeViewOneTree})
+	messages, err := getClient().MessageList(topic.Topic, &tat.MessageCriteria{Skip: 0, Limit: 200, AndTag: "TatDashing", TreeView: tat.TreeViewOneTree})
 	if err != nil {
 		log.Errorf("Error with messages list on topic %s err:%s", topic.Topic, err.Error())
 		return
