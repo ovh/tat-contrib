@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"sort"
 	"strconv"
@@ -11,6 +12,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/ovh/tat"
 )
+
+const messagesPerRequest = 200
 
 func run() {
 	for {
@@ -36,14 +39,30 @@ func do() {
 }
 
 func doTopic(topic tat.Topic) {
-	messages, err := getClient().MessageList(topic.Topic, &tat.MessageCriteria{Skip: 0, Limit: 200, AndTag: "TatDashing", TreeView: tat.TreeViewOneTree})
-	if err != nil {
-		log.Errorf("Error with messages list on topic %s err:%s", topic.Topic, err.Error())
+	numberOfMessages, errMessageCount := getClient().MessageCount(topic.Topic, &tat.MessageCriteria{AndTag: "TatDashing"})
+	if errMessageCount != nil {
+		log.Errorf("Error with message count on topic %s err:%s", topic.Topic, errMessageCount.Error())
 		return
 	}
+	log.Debugf("doTopic - total number of messages found following criteria on topic %s: %d", topic.Topic, numberOfMessages.Count)
+	numberOfPages := int(math.Ceil(float64(numberOfMessages.Count) / float64(messagesPerRequest)))
+	log.Debugf("doTopic - number of pages to get all messages %d by %d following criteria on topic %s: %d", messagesPerRequest, messagesPerRequest, topic.Topic, numberOfPages)
+	messagesMap := map[string]tat.Message{}
+	for i := 0; i < numberOfPages; i++ {
+		messages, err := getClient().MessageList(topic.Topic, &tat.MessageCriteria{Skip: i * messagesPerRequest, Limit: messagesPerRequest, AndTag: "TatDashing", TreeView: tat.TreeViewOneTree})
+		if err != nil {
+			log.Errorf("Error with messages list on topic %s err:%s", topic.Topic, err.Error())
+			return
+		}
+		for _, msg := range messages.Messages {
+			if _, present := messagesMap[msg.ID]; !present {
+				messagesMap[msg.ID] = msg
+			}
+		}
+	}
 
-	log.Debugf("Topic %s %d messages", topic.Topic, len(messages.Messages))
-	for _, msg := range messages.Messages {
+	log.Debugf("Topic %s %d messages", topic.Topic, len(messagesMap))
+	for _, msg := range messagesMap {
 		doMessage(msg)
 	}
 }
