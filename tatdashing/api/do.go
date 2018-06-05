@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -19,7 +20,7 @@ func run() {
 	for {
 		log.Debugf("RUN Dashing")
 		do()
-		time.Sleep(30 * time.Second)
+		time.Sleep(15 * time.Second)
 	}
 }
 
@@ -31,11 +32,28 @@ func do() {
 		return
 	}
 
+	// We'll loop on each topic in parallel. `maxGoroutines` will be processed at once at the maximum
+	// The semaphore prevents creating more than `maxGoroutines` goroutines at the same time
+	// The WaitGroup allows us to wait for all the goroutines to finish before ending the function
+	const maxGoroutines = 10
+	sem := make(chan struct{}, maxGoroutines)
+	var wg sync.WaitGroup
+
 	for _, topic := range topics.Topics {
-		log.Debugf("Work on topic %s", topic.Topic)
-		doTopic(topic)
-		log.Debugf("End Work on topic %s", topic.Topic)
+		wg.Add(1)
+		sem <- struct{}{}
+
+		go func(topic tat.Topic) {
+			defer wg.Done()
+
+			log.Debugf("Work on topic %s", topic.Topic)
+			doTopic(topic)
+			log.Debugf("End Work on topic %s", topic.Topic)
+
+			<-sem
+		}(topic)
 	}
+	wg.Wait()
 }
 
 func doTopic(topic tat.Topic) {
