@@ -161,7 +161,7 @@ func (bot *botClient) sendPresencesOnConfs(refreshAlias bool) error {
 	for _, t := range topicsJSON.Topics {
 		for _, p := range t.Parameters {
 			if strings.HasPrefix(p.Key, tat.HookTypeXMPP) {
-				if strings.Contains(p.Value, "@conference.") {
+				if strings.Contains(p.Value, "@conference") {
 					topicConfsNew = append(topicConfsNew, topicConf{
 						topic:      t.Topic,
 						conference: p.Value,
@@ -256,7 +256,7 @@ func (bot *botClient) sendRetry(v xmpp.Chat) {
 }
 
 func getTypeChat(s string) string {
-	if strings.Contains(s, "@conference.") {
+	if strings.Contains(s, "@conference") {
 		return typeGroupChat
 	}
 	return typeChat
@@ -325,6 +325,13 @@ func hookProcess(hook tat.HookJSON) {
 	topic := ""
 
 	log.Debugf("hookJSON> Hook received destination:%s compute: %s", hook.Hook.Destination, destination)
+
+	// If an authorized domain is configured and if the destination is not part of this domain, do not process it
+	xmppAuthorizedDomain := viper.GetString("xmpp_authorized_domain")
+	if xmppAuthorizedDomain != "" && !strings.HasSuffix(destination, xmppAuthorizedDomain) {
+		log.Debugf("destination not authorized on the configured domain (domain: %v, destination: %v)", xmppAuthorizedDomain, destination)
+		return
+	}
 
 	if len(sd) > 1 {
 		for _, arg := range sd {
