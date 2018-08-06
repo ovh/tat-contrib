@@ -154,6 +154,9 @@ func init() {
 	flags.Int("xmpp-stacking-warn", 10, "Level of the number of messages waiting to be sent from which a warning will be triggered")
 	viper.BindPFlag("xmpp_stacking_warn", flags.Lookup("xmpp-stacking-warn"))
 
+	flags.String("xmpp-authorized-domain", "", "Authorized XMPP domain to send messages on")
+	viper.BindPFlag("xmpp_authorized_domain", flags.Lookup("xmpp-authorized-domain"))
+
 	mainCmd.PersistentFlags().StringVarP(&configFile, "configFile", "c", "", "configuration file")
 }
 
