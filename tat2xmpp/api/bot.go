@@ -23,10 +23,9 @@ var (
 const resource = "tat"
 
 type topicConf struct {
-	topic            string
-	conference       string
-	typeHook         string
-	isOnlyFilterHook bool
+	topic      string
+	conference string
+	typeHook   string
 }
 
 var topicConfs []topicConf
@@ -100,7 +99,7 @@ func (bot *botClient) getStatus() string {
 
 	stopicConfs := ""
 	for _, t := range topicConfs {
-		stopicConfs += fmt.Sprintf("%s -> %s type:%s isOnlyFilterHook:%t\n", t.topic, t.conference, t.typeHook, t.isOnlyFilterHook)
+		stopicConfs += fmt.Sprintf("%s -> %s type:%s \n", t.topic, t.conference, t.typeHook)
 	}
 
 	data := map[string]string{
@@ -162,11 +161,25 @@ func (bot *botClient) sendPresencesOnConfs(refreshAlias bool) error {
 		for _, p := range t.Parameters {
 			if strings.HasPrefix(p.Key, tat.HookTypeXMPP) {
 				if strings.Contains(p.Value, "@conference") {
-					topicConfsNew = append(topicConfsNew, topicConf{
-						topic:      t.Topic,
-						conference: p.Value,
-						typeHook:   p.Key,
-					})
+					confToAdd := true
+
+					// Check if the parameter found already has a corresponding hook
+					for _, c := range topicConfsFilterHook {
+						if strings.HasPrefix(c.conference, p.Value) {
+							// If a hook is already registered for this topic, do not register it again
+							confToAdd = false
+							break
+						}
+					}
+
+					// Only register the hook if it is not already registered in the filters hooks
+					if confToAdd {
+						topicConfsNew = append(topicConfsNew, topicConf{
+							topic:      t.Topic,
+							conference: p.Value,
+							typeHook:   p.Key,
+						})
+					}
 				}
 			}
 		}
@@ -346,19 +359,23 @@ func hookProcess(hook tat.HookJSON) {
 	typeXMPP := getTypeChat(destination)
 	if typeXMPP == typeGroupChat {
 		presenceToSend := true
+
+		// Check if the destination found already has a corresponding hook
 		for _, c := range topicConfs {
 			if strings.HasPrefix(c.conference, destination) {
+				// If a hook is already registered for this topic, do not register it again
 				presenceToSend = false
+				break
 			}
 		}
 
+		// Only register the hook if it is not already registered
 		if presenceToSend {
 			log.Debugf("hookJSON> presenceToSend Add t:%s c:%s t:%s", hook.HookMessage.MessageJSONOut.Message.Topic, destination, hook.Hook.Type)
 			topicConfsFilterHook = append(topicConfsFilterHook, topicConf{
-				topic:            hook.HookMessage.MessageJSONOut.Message.Topic,
-				conference:       destination,
-				typeHook:         hook.Hook.Type,
-				isOnlyFilterHook: true,
+				topic:      hook.HookMessage.MessageJSONOut.Message.Topic,
+				conference: destination,
+				typeHook:   hook.Hook.Type,
 			})
 
 			tatbot.renewXMPP()
