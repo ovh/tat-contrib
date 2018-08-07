@@ -161,8 +161,16 @@ func (bot *botClient) sendPresencesOnConfs(refreshAlias bool) error {
 		for _, p := range t.Parameters {
 			if strings.HasPrefix(p.Key, tat.HookTypeXMPP) {
 				if strings.Contains(p.Value, "@conference") {
-					confToAdd := true
+					// If an authorized domain is configured and if the parameter value is not part of this domain,
+					// do not process it and go to the next parameter
+					xmppAuthorizedDomain := viper.GetString("xmpp_authorized_domain")
+					if xmppAuthorizedDomain != "" && !strings.HasSuffix(p.Value, xmppAuthorizedDomain) {
+						log.Debugf("parameter value not authorized on the configured domain (domain: %v, destination: %v)", xmppAuthorizedDomain, p.Value)
+						// Go to the next parameter
+						continue
+					}
 
+					confToAdd := true
 					// Check if the parameter found already has a corresponding hook
 					for _, c := range topicConfsFilterHook {
 						if strings.HasPrefix(c.conference, p.Value) {
