@@ -168,6 +168,7 @@ func (bot *botClient) sendPresencesOnConfs(refreshAlias bool) error {
 						if strings.HasPrefix(c.conference, p.Value) {
 							// If a hook is already registered for this topic, do not register it again
 							confToAdd = false
+							break
 						}
 					}
 
@@ -364,6 +365,7 @@ func hookProcess(hook tat.HookJSON) {
 			if strings.HasPrefix(c.conference, destination) {
 				// If a hook is already registered for this topic, do not register it again
 				presenceToSend = false
+				break
 			}
 		}
 
