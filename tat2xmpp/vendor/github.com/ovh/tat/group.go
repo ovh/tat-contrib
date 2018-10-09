@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -23,6 +24,7 @@ type GroupCriteria struct {
 	Limit           int
 	IDGroup         string
 	Name            string
+	NameRegex       string
 	Description     string
 	DateMinCreation string
 	DateMaxCreation string
@@ -47,6 +49,9 @@ func (g *GroupCriteria) CacheKey() []string {
 	}
 	if g.Name != "" {
 		s = append(s, "name="+g.Name)
+	}
+	if g.NameRegex != "" {
+		s = append(s, "name_regex="+g.NameRegex)
 	}
 	if g.Description != "" {
 		s = append(s, "description="+g.Description)
@@ -92,8 +97,43 @@ type ParamTopicGroupJSON struct {
 }
 
 // GroupList returns groups
-func (c *Client) GroupList(skip, limit int) (*GroupsJSON, error) {
-	path := fmt.Sprintf("/groups?skip=%d&limit=%d", skip, limit)
+func (c *Client) GroupList(criteria *GroupCriteria) (*GroupsJSON, error) {
+	if c == nil {
+		return nil, ErrClientNotInitiliazed
+	}
+
+	if criteria == nil {
+		criteria = &GroupCriteria{
+			Skip:  0,
+			Limit: 100,
+		}
+	}
+
+	v := url.Values{}
+	v.Set("skip", strconv.Itoa(criteria.Skip))
+	v.Set("limit", strconv.Itoa(criteria.Limit))
+
+	if criteria.IDGroup != "" {
+		v.Set("idGroup", criteria.IDGroup)
+	}
+	if criteria.Name != "" {
+		v.Set("name", criteria.Name)
+	}
+	if criteria.NameRegex != "" {
+		v.Set("nameRegex", criteria.NameRegex)
+	}
+	if criteria.Description != "" {
+		v.Set("description", criteria.Description)
+	}
+	if criteria.DateMinCreation != "" {
+		v.Set("dateMinCreation", criteria.DateMinCreation)
+	}
+	if criteria.DateMaxCreation != "" {
+		v.Set("dateMaxCreation", criteria.DateMaxCreation)
+	}
+
+	path := fmt.Sprintf("/groups?%s", v.Encode())
+
 	out, err := c.reqWant("GET", http.StatusOK, path, nil)
 	if err != nil {
 		ErrorLogFunc("Error while listing groups: %s", err)
@@ -163,25 +203,26 @@ func (c *Client) GroupDelete(groupname string) error {
 
 // GroupAddUsers adds users on a group
 func (c *Client) GroupAddUsers(groupname string, users []string) error {
-	return c.groupAddRemoveUsers("PUT", "/group/add/user", groupname, users)
+	return c.groupAddRemoveUsers("PUT", http.StatusCreated, "/group/add/user", groupname, users)
 }
 
 // GroupDeleteUsers deletes users from a group
 func (c *Client) GroupDeleteUsers(groupname string, users []string) error {
-	return c.groupAddRemoveUsers("PUT", "/group/remove/user", groupname, users)
+	return c.groupAddRemoveUsers("PUT", http.StatusOK, "/group/remove/user", groupname, users)
 }
 
 // GroupAddAdminUsers adds an admin user on a group
 func (c *Client) GroupAddAdminUsers(groupname string, users []string) error {
-	return c.groupAddRemoveUsers("PUT", "/group/add/adminuser", groupname, users)
+	return c.groupAddRemoveUsers("PUT", http.StatusCreated, "/group/add/adminuser", groupname, users)
 }
 
 // GroupDeleteAdminUsers removes admin users from a group
 func (c *Client) GroupDeleteAdminUsers(groupname string, users []string) error {
-	return c.groupAddRemoveUsers("PUT", "/group/remove/adminuser", groupname, users)
+	return c.groupAddRemoveUsers("PUT", http.StatusOK, "/group/remove/adminuser", groupname, users)
 }
 
-func (c *Client) groupAddRemoveUsers(method, path, groupname string, users []string) error {
+func (c *Client) groupAddRemoveUsers(method string, httpStatus int, path, groupname string, users []string) error {
+	usersInError := map[string]string{}
 	for _, username := range users {
 		t := ParamGroupUserJSON{Groupname: groupname, Username: username}
 
@@ -191,12 +232,28 @@ func (c *Client) groupAddRemoveUsers(method, path, groupname string, users []str
 			return err
 		}
 
-		_, err = c.reqWant(method, http.StatusCreated, path, b)
+		_, err = c.reqWant(method, httpStatus, path, b)
+		// If an error is encountered while adding the current user, continue execution but keep trace of the user and its associated error
 		if err != nil {
-			ErrorLogFunc("Error while deleting group: %s", err)
-			return err
+			usersInError[username] = err.Error()
+			continue
 		}
-		return nil
 	}
+
+	// If at least one user is in error, return an error
+	if len(usersInError) > 0 {
+		err := fmt.Errorf("errors on the following users were encountered\n")
+
+		// Log each user in error and its associated error
+		for key, value := range usersInError {
+			ErrorLogFunc("Error on user %s: %s", key, value)
+			err = fmt.Errorf("%sError on user %s: %s\n", err.Error(), key, value)
+		}
+
+		// Return all the errors as one error
+		return err
+	}
+
+	// If no users are in error everything went fine, return no errors
 	return nil
 }
