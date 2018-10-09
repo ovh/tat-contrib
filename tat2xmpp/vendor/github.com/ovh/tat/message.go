@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	// DefaultMessageMaxSize is max size of message, can be overrided by topic
-	DefaultMessageMaxSize = 140
 	// DefaultMessageMaxReplies is max number of replies on a message, can be overrided by topic
 	DefaultMessageMaxReplies = 30
 
@@ -1062,7 +1060,7 @@ func (m *Message) ContainsTag(tag string) bool {
 
 func GetDateRef(pattern string) (time.Time, error) {
 	var dateRef time.Time
-	now.FirstDayMonday = true
+	now.WeekStartDay = time.Monday
 	switch pattern {
 	case "BeginningOfMinute":
 		return now.BeginningOfMinute(), nil
