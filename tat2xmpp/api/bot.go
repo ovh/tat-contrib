@@ -21,6 +21,7 @@ var (
 )
 
 const resource = "tat"
+const waitTimeOnError = 10 * time.Second
 
 type topicConf struct {
 	topic      string
@@ -238,6 +239,18 @@ func (bot *botClient) receive() {
 		if err != nil {
 			if !strings.Contains(err.Error(), "EOF") {
 				log.Errorf("receive >> err: %s", err)
+
+				log.Warn("We will try to get a new XMPP client now to fix this error")
+				newXmppClient, errGetNewXMPPClient := getNewXMPPClient()
+				if errGetNewXMPPClient != nil {
+					log.Errorf("XMPP Client renewal >> error with getNewXMPPClient errGetNewXMPPClient:%s", errGetNewXMPPClient)
+				} else {
+					log.Info("Reconnection successful, replace the old client with the new one")
+					bot.XMPPClient = newXmppClient
+				}
+
+				// In any case, wait 10 seconds between each retry to avoid spamming logs and connection retries
+				time.Sleep(waitTimeOnError)
 			}
 		}
 		isError := false
