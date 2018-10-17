@@ -19,31 +19,44 @@ func serverName(host string) string {
 }
 
 func getNewXMPPClient() (*xmpp.Client, error) {
-	xmpp.DefaultConfig = tls.Config{
-		ServerName:         serverName(viper.GetString("xmpp_server")),
-		InsecureSkipVerify: viper.GetBool("xmpp_insecure_skip_verify"),
+	hosts := strings.Split(viper.GetString("xmpp_server"), ",")
+
+	var xmppClient *xmpp.Client
+	for index, host := range hosts {
+		xmppClient = nil
+		xmpp.DefaultConfig = tls.Config{
+			ServerName:         serverName(host),
+			InsecureSkipVerify: viper.GetBool("xmpp_insecure_skip_verify"),
+		}
+
+		options := xmpp.Options{
+			Host:          host,
+			User:          viper.GetString("xmpp_bot_jid"),
+			Password:      viper.GetString("xmpp_bot_password"),
+			NoTLS:         viper.GetBool("xmpp_notls"),
+			StartTLS:      viper.GetBool("xmpp_starttls"),
+			Debug:         viper.GetBool("xmpp_debug"),
+			Session:       viper.GetBool("xmpp_session"),
+			Status:        "",
+			StatusMessage: "",
+		}
+
+		var errNewClient error
+		xmppClient, errNewClient = options.NewClient()
+
+		if errNewClient != nil && index < len(hosts)-1 {
+			log.Errorf("getClient >> NewClient XMPP, err with host %s (we will retry with host %s):%s", host, hosts[index+1], errNewClient)
+			continue
+		} else if errNewClient != nil && index == len(hosts)-1 {
+			log.Panicf("getClient >> NewClient XMPP, err with host %s:%s", host, errNewClient)
+		}
+
+		// If we are here, that means that the connection has been successful and we can stop iterating over hosts and use the current host
+		break
 	}
 
-	options := xmpp.Options{Host: viper.GetString("xmpp_server"),
-		User:          viper.GetString("xmpp_bot_jid"),
-		Password:      viper.GetString("xmpp_bot_password"),
-		NoTLS:         viper.GetBool("xmpp_notls"),
-		StartTLS:      viper.GetBool("xmpp_starttls"),
-		Debug:         viper.GetBool("xmpp_debug"),
-		Session:       viper.GetBool("xmpp_session"),
-		Status:        "",
-		StatusMessage: "",
-	}
-
-	xmppClient, err := options.NewClient()
-
-	if err != nil {
-		log.Panicf("getClient >> NewClient XMPP, err:%s", err)
-		return nil, err
-	}
-
-	err = sendInitialPresence(xmppClient)
-	return xmppClient, err
+	errSendInitialPresence := sendInitialPresence(xmppClient)
+	return xmppClient, errSendInitialPresence
 
 }
 
