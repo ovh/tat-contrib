@@ -22,41 +22,41 @@ func getNewXMPPClient() (*xmpp.Client, error) {
 	hosts := strings.Split(viper.GetString("xmpp_server"), ",")
 
 	var xmppClient *xmpp.Client
-	for index, host := range hosts {
-		xmppClient = nil
+	for _, host := range hosts {
+		log.Infof("Trying to connect on host %s", host)
+
 		xmpp.DefaultConfig = tls.Config{
 			ServerName:         serverName(host),
 			InsecureSkipVerify: viper.GetBool("xmpp_insecure_skip_verify"),
 		}
 
 		options := xmpp.Options{
-			Host:          host,
-			User:          viper.GetString("xmpp_bot_jid"),
-			Password:      viper.GetString("xmpp_bot_password"),
-			NoTLS:         viper.GetBool("xmpp_notls"),
-			StartTLS:      viper.GetBool("xmpp_starttls"),
-			Debug:         viper.GetBool("xmpp_debug"),
-			Session:       viper.GetBool("xmpp_session"),
-			Status:        "",
-			StatusMessage: "",
+			Host:     host,
+			User:     viper.GetString("xmpp_bot_jid"),
+			Password: viper.GetString("xmpp_bot_password"),
+			NoTLS:    viper.GetBool("xmpp_notls"),
+			StartTLS: viper.GetBool("xmpp_starttls"),
+			Debug:    viper.GetBool("xmpp_debug"),
+			Session:  viper.GetBool("xmpp_session"),
 		}
 
 		var errNewClient error
 		xmppClient, errNewClient = options.NewClient()
 
-		if errNewClient != nil && index < len(hosts)-1 {
-			log.Errorf("getClient >> NewClient XMPP, err with host %s (we will retry with host %s):%s", host, hosts[index+1], errNewClient)
+		if errNewClient != nil {
+			log.Errorf("getClient >> NewClient XMPP, err with host %s:%s", host, errNewClient)
 			continue
-		} else if errNewClient != nil && index == len(hosts)-1 {
-			log.Panicf("getClient >> NewClient XMPP, err with host %s:%s", host, errNewClient)
 		}
 
 		// If we are here, that means that the connection has been successful and we can stop iterating over hosts and use the current host
 		break
 	}
 
-	errSendInitialPresence := sendInitialPresence(xmppClient)
-	return xmppClient, errSendInitialPresence
+	if xmppClient == nil {
+		log.Panicf("connection failed with every provided host")
+	}
+
+	return xmppClient, sendInitialPresence(xmppClient)
 
 }
 
