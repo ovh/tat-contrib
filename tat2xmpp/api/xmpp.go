@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"fmt"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -53,7 +54,7 @@ func getNewXMPPClient() (*xmpp.Client, error) {
 	}
 
 	if xmppClient == nil {
-		log.Panicf("connection failed with every provided host")
+		return nil, fmt.Errorf("connection failed with all hosts (%v)", hosts)
 	}
 
 	return xmppClient, sendInitialPresence(xmppClient)
