@@ -58,9 +58,6 @@ func (bot *botClient) born() {
 		errSendPresencesOnConfs := bot.sendPresencesOnConfs(true)
 		if errSendInitialPresence != nil {
 			log.Errorf("born - sendPresencesOnConfs >> error: %v", errSendPresencesOnConfs)
-
-			// Wait 10 seconds between each retry after an error to avoid spamming logs
-			time.Sleep(waitTimeOnError)
 		}
 		time.Sleep(20 * time.Second)
 	}
@@ -251,10 +248,9 @@ func (bot *botClient) receive() {
 			// FIXME: This log is here to troubleshoot potential connexion problems
 			// If this log here shows that we can have connection problems not handled by the code below,
 			// we will need to apply the same fix as below to renew the XMPP client
-			// Else, we will be able to remove this log securely (along with the wait time to avoid spamming logs)
+			// Else, we will be able to remove this log securely
 			// Until then, keep it here to troubleshoot potential connection problems
 			log.Errorf("receive >> err WITH NO EOF: %v", err)
-			time.Sleep(waitTimeOnError)
 
 			if !strings.Contains(err.Error(), "EOF") {
 				log.Errorf("receive >> err: %s", err)
