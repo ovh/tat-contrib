@@ -250,7 +250,7 @@ func (bot *botClient) receive() {
 			// we will need to apply the same fix as below to renew the XMPP client
 			// Else, we will be able to remove this log securely
 			// Until then, keep it here to troubleshoot potential connection problems
-			log.Errorf("receive >> err WITH NO EOF: %v", err)
+			log.Errorf("receive >> err WITH POTENTIAL EOF: %v", err)
 
 			if !strings.Contains(err.Error(), "EOF") {
 				log.Errorf("receive >> err: %s", err)
