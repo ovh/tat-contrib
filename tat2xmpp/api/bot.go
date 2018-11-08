@@ -255,6 +255,7 @@ func (bot *botClient) receive() {
 				// Else, we will be able to remove this log securely
 				// Until then, keep it here to troubleshoot potential connection problems
 				log.Errorf("receive >> err WITH EOF: %v", err)
+				time.Sleep(waitTimeOnError)
 			}
 		}
 		isError := false
