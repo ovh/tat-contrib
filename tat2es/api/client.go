@@ -14,8 +14,9 @@ var instance *tat.Client
 
 type esConn struct {
 	*elastigo.Conn
-	pause int
-	index string
+	pause  int
+	index  string
+	prefix string
 }
 
 // getClient initializes client on tat engine
@@ -57,6 +58,7 @@ func getClientsES() ([]esConn, error) {
 	passwords := strings.Split(viper.GetString("password_es"), ",")
 	indices := strings.Split(viper.GetString("force_index_es"), ",")
 	pauses := strings.Split(viper.GetString("pause_es"), ",")
+	prefixes := strings.Split(viper.GetString("prefix_index_es"), ",")
 
 	for i, host := range hosts {
 		c := elastigo.NewConn()
@@ -66,10 +68,11 @@ func getClientsES() ([]esConn, error) {
 		c.Username = getStringValue(users, i)
 		c.Password = getStringValue(passwords, i)
 		pause, err := getIntValue(pauses, i)
+		prefix := getStringValue(prefixes, i)
 		if err != nil {
 			return nil, err
 		}
-		esConns = append(esConns, esConn{Conn: c, pause: pause, index: getStringValue(indices, i)})
+		esConns = append(esConns, esConn{Conn: c, pause: pause, index: getStringValue(indices, i), prefix: prefix})
 	}
 	return esConns, nil
 }

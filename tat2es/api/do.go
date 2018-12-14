@@ -91,12 +91,16 @@ func postES(esConn esConn, postESChan <-chan *indexableData) {
 	log.Debugf("postES enter")
 
 	for recvData := range postESChan {
-		log.Debugf("postES -> recvData for index %s ", recvData.index)
-
 		indexES := recvData.index
+		if esConn.prefix != "" {
+			indexES = esConn.prefix + indexES
+		}
 		if esConn.index != "" {
 			indexES = esConn.index
 		}
+
+		log.Debugf("postES -> recvData for index %s on host %s", indexES, esConn.Domain)
+
 		for _, m := range recvData.data {
 			tg := make(map[string]string)
 			for _, v := range m.Tags {
@@ -134,11 +138,11 @@ func postES(esConn esConn, postESChan <-chan *indexableData) {
 				}
 			}
 
-			log.Debugf("push %s to ES index %s", dataES["ID"].(string), indexES)
+			log.Debugf("push %s to ES index %s on host %s", dataES["ID"].(string), indexES, esConn.Domain)
 			_, err := esConn.IndexWithParameters(indexES, "tatmessage", dataES["ID"].(string), "", 0, "", "", tat.DateFromFloat(m.DateCreation).Format(time.RFC3339), 0, "", "", false, nil, dataES)
 			time.Sleep(time.Duration(esConn.pause) * time.Millisecond)
 			if err != nil {
-				log.Errorf("cannot index message %s in %s :%s", dataES["ID"].(string), indexES, err)
+				log.Errorf("cannot index message %s in %s on host %s: %s", dataES["ID"].(string), indexES, esConn.Domain, err)
 			}
 		}
 	}
