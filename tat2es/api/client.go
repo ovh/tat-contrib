@@ -12,6 +12,9 @@ import (
 
 var instance *tat.Client
 
+// SEPARATOR is the value separator for viper parameters
+const SEPARATOR = ","
+
 type esConn struct {
 	*elastigo.Conn
 	pause  int
@@ -51,48 +54,45 @@ func getClient() *tat.Client {
 func getClientsES() ([]esConn, error) {
 	var esConns []esConn
 
-	protocols := strings.Split(viper.GetString("protocol_es"), ",")
-	hosts := strings.Split(viper.GetString("host_es"), ",")
-	ports := strings.Split(viper.GetString("port_es"), ",")
-	users := strings.Split(viper.GetString("user_es"), ",")
-	passwords := strings.Split(viper.GetString("password_es"), ",")
-	indices := strings.Split(viper.GetString("force_index_es"), ",")
-	pauses := strings.Split(viper.GetString("pause_es"), ",")
-	prefixes := strings.Split(viper.GetString("prefix_index_es"), ",")
-
-	for i, host := range hosts {
+	for i, host := range strings.Split(viper.GetString("host_es"), SEPARATOR) {
 		c := elastigo.NewConn()
 		c.Domain = host
-		c.Protocol = getStringValue(protocols, i)
-		c.Port = getStringValue(ports, i)
-		c.Username = getStringValue(users, i)
-		c.Password = getStringValue(passwords, i)
-		pause, err := getIntValue(pauses, i)
-		prefix := getStringValue(prefixes, i)
-		if err != nil {
-			return nil, err
-		}
-		esConns = append(esConns, esConn{Conn: c, pause: pause, index: getStringValue(indices, i), prefix: prefix})
+		c.Protocol = getStringValue("protocol_es", i)
+		c.Port = getStringValue("port_es", i)
+		c.Username = getStringValue("user_es", i)
+		c.Password = getStringValue("password_es", i)
+		esConns = append(esConns, esConn{
+			Conn:   c,
+			pause:  getIntValue("pause_es", i),
+			index:  getStringValue("force_index_es", i),
+			prefix: getStringValue("prefix_index_es", i),
+		})
 	}
 	return esConns, nil
 }
 
-func getStringValue(array []string, index int) string {
+func getStringValue(paramName string, index int) string {
+	array := strings.Split(viper.GetString(paramName), ",")
 	if len(array) == 0 {
 		return ""
 	}
 	if index >= len(array) {
-		return array[len(array)-1]
+		log.Fatalf("missing value for %s", paramName)
 	}
 	return array[index]
 }
 
-func getIntValue(array []string, index int) (int, error) {
+func getIntValue(paramName string, index int) int {
+	array := strings.Split(viper.GetString(paramName), ",")
 	if len(array) == 0 {
-		return 0, nil
+		return 0
 	}
 	if index >= len(array) {
-		return strconv.Atoi(array[len(array)-1])
+		log.Fatalf("missing value for %s", paramName)
 	}
-	return strconv.Atoi(array[index])
+	val, err := strconv.Atoi(array[index])
+	if err != nil {
+		log.Fatalf("invalid number %s for param %s", array[index], paramName)
+	}
+	return val
 }
