@@ -72,11 +72,18 @@ var mainCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		//A chan to feed ES
-		postESChan = make(chan *indexableData, 10)
+		conns, err := getClientsES()
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		go postES()
-		go do()
+		var chans []chan<- *indexableData
+		for _, conn := range conns {
+			postESChan := make(chan *indexableData)
+			chans = append(chans, postESChan)
+			go postES(conn, postESChan)
+		}
+		go do(chans)
 
 		log.Infof("RRunning on %s", viper.GetString("listen_port"))
 		if err := s.ListenAndServe(); err != nil {
@@ -117,6 +124,9 @@ func init() {
 	flags.String("password-tat-engine", "", "Password Tat Engine")
 	viper.BindPFlag("password_tat_engine", flags.Lookup("password-tat-engine"))
 
+	flags.Int("pause-tat", 5, "Pause in second after each call on tat for each topic")
+	viper.BindPFlag("pause_tat", flags.Lookup("pause-tat"))
+
 	flags.String("protocol-es", "http", "Protocol ElasticSearch http or https")
 	viper.BindPFlag("protocol_es", flags.Lookup("protocol-es"))
 
@@ -129,14 +139,14 @@ func init() {
 	flags.String("password-es", "", "Password ElasticSearch")
 	viper.BindPFlag("password_es", flags.Lookup("password-es"))
 
-	flags.Int("pause-es", 10, "Pause in ms after each send on ES")
+	flags.String("pause-es", "", "Pause in ms after each send on ES")
 	viper.BindPFlag("pause_es", flags.Lookup("pause-es"))
-
-	flags.Int("pause-tat", 5, "Pause in second after each call on tat for each topic")
-	viper.BindPFlag("pause_tat", flags.Lookup("pause-tat"))
 
 	flags.String("port-es", "9200", "Port ElasticSearch")
 	viper.BindPFlag("port_es", flags.Lookup("port-es"))
+
+	flags.String("force-index-es", "", "Force ES index")
+	viper.BindPFlag("force_index_es", flags.Lookup("force-index-es"))
 
 	flags.String("cron-schedule", "@every 3h", "Cron Schedule, see https://godoc.org/github.com/robfig/cron")
 	viper.BindPFlag("cron_schedule", flags.Lookup("cron-schedule"))
@@ -149,7 +159,6 @@ func init() {
 
 	flags.Int("messages-limit", 50, "messages-limit is used by MessageCriteria.Limit for requesting TAT")
 	viper.BindPFlag("messages_limit", flags.Lookup("messages-limit"))
-
 }
 
 func main() {

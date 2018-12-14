@@ -1,14 +1,26 @@
 package main
 
 import (
+	"strconv"
+	"strings"
+
 	log "github.com/Sirupsen/logrus"
-	elastigo "github.com/mattbaird/elastigo/lib"
+	"github.com/mattbaird/elastigo/lib"
 	"github.com/ovh/tat"
 	"github.com/spf13/viper"
 )
 
 var instance *tat.Client
-var esConn *elastigo.Conn
+
+// SEPARATOR is the value separator for viper parameters
+const SEPARATOR = ","
+
+type esConn struct {
+	*elastigo.Conn
+	pause  int
+	index  string
+	prefix string
+}
 
 // getClient initializes client on tat engine
 func getClient() *tat.Client {
@@ -38,16 +50,49 @@ func getClient() *tat.Client {
 	return instance
 }
 
-// getClient initializes client on tat engine
-func getClientES() *elastigo.Conn {
-	if esConn != nil {
-		return esConn
-	}
-	esConn = elastigo.NewConn()
-	esConn.Domain = viper.GetString("host_es")
-	esConn.Port = viper.GetString("port_es")
-	esConn.Username = viper.GetString("user_es")
-	esConn.Password = viper.GetString("password_es")
+// getClientsES initializes ES clients
+func getClientsES() ([]esConn, error) {
+	var esConns []esConn
 
-	return esConn
+	for i, host := range strings.Split(viper.GetString("host_es"), SEPARATOR) {
+		c := elastigo.NewConn()
+		c.Domain = host
+		c.Protocol = getStringValue("protocol_es", i)
+		c.Port = getStringValue("port_es", i)
+		c.Username = getStringValue("user_es", i)
+		c.Password = getStringValue("password_es", i)
+		esConns = append(esConns, esConn{
+			Conn:   c,
+			pause:  getIntValue("pause_es", i),
+			index:  getStringValue("force_index_es", i),
+			prefix: getStringValue("prefix_index_es", i),
+		})
+	}
+	return esConns, nil
+}
+
+func getStringValue(paramName string, index int) string {
+	array := strings.Split(viper.GetString(paramName), ",")
+	if len(array) == 0 {
+		return ""
+	}
+	if index >= len(array) {
+		log.Fatalf("missing value for %s", paramName)
+	}
+	return array[index]
+}
+
+func getIntValue(paramName string, index int) int {
+	array := strings.Split(viper.GetString(paramName), ",")
+	if len(array) == 0 {
+		return 0
+	}
+	if index >= len(array) {
+		log.Fatalf("missing value for %s", paramName)
+	}
+	val, err := strconv.Atoi(array[index])
+	if err != nil {
+		log.Fatalf("invalid number %s for param %s", array[index], paramName)
+	}
+	return val
 }

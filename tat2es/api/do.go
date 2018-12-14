@@ -6,7 +6,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	elastigo "github.com/mattbaird/elastigo/lib"
 	"github.com/ovh/tat"
 	"github.com/robfig/cron"
 	"github.com/spf13/viper"
@@ -17,23 +16,22 @@ type indexableData struct {
 	index string
 }
 
-var postESChan chan *indexableData
-
 // runner is a scheduled runner for each topic:index
 type runner struct {
-	topicPath string
-	index     string
-	timestamp int64
+	topicPath  string
+	index      string
+	timestamp  int64
+	postESChan []chan<- *indexableData
 }
 
 //Run is called by cron
 func (r *runner) Run() {
 	var t = time.Now().Unix()
-	work(r.topicPath, r.index, r.timestamp)
+	work(r.topicPath, r.index, r.timestamp, r.postESChan)
 	r.timestamp = t
 }
 
-func do() {
+func do(postESChan []chan<- *indexableData) {
 	scheduler := cron.New()
 	t := viper.GetString("topics_indexes")
 
@@ -43,7 +41,7 @@ func do() {
 		tuple := strings.Split(arg, ":")
 		if len(tuple) == 2 {
 			log.Debugf("Add schedule %s for topic %s and es-index %s", viper.GetString("cron_schedule"), tuple[0], tuple[1])
-			scheduler.AddJob(viper.GetString("cron_schedule"), &runner{tuple[0], tuple[1], ts})
+			scheduler.AddJob(viper.GetString("cron_schedule"), &runner{tuple[0], tuple[1], ts, postESChan})
 		} else {
 			log.Errorf("Invalid values for --topics-indexes %s, %s", arg, tuple)
 		}
@@ -53,7 +51,7 @@ func do() {
 	<-forever
 }
 
-func work(topic string, index string, timestamp int64) {
+func work(topic string, index string, timestamp int64, postESChan []chan<- *indexableData) {
 	countJSON, err := getClient().MessageCount(topic, &tat.MessageCriteria{DateMinUpdate: fmt.Sprintf("%d", timestamp)})
 	if err != nil {
 		log.Errorf("work> Error while getting messages on topic %s, err:%s", topic, err.Error())
@@ -79,7 +77,9 @@ func work(topic string, index string, timestamp int64) {
 			continue
 		}
 
-		postESChan <- &indexableData{msgs.Messages, index}
+		for _, c := range postESChan {
+			c <- &indexableData{msgs.Messages, index}
+		}
 
 		time.Sleep(time.Duration(viper.GetInt("pause_tat")) * time.Second)
 		skip += viper.GetInt("messages_limit") - 1
@@ -87,22 +87,20 @@ func work(topic string, index string, timestamp int64) {
 
 }
 
-func postES() {
+func postES(esConn esConn, postESChan <-chan *indexableData) {
 	log.Debugf("postES enter")
 
-	//Only one ES Connection
-	esConn = elastigo.NewConn()
-
-	esConn.Protocol = viper.GetString("protocol_es")
-	esConn.Domain = viper.GetString("host_es")
-	esConn.Port = viper.GetString("port_es")
-	esConn.Username = viper.GetString("user_es")
-	esConn.Password = viper.GetString("password_es")
-
 	for recvData := range postESChan {
-		log.Debugf("postES -> recvData for index %s ", recvData.index)
-
 		indexES := recvData.index
+		if esConn.prefix != "" {
+			indexES = esConn.prefix + indexES
+		}
+		if esConn.index != "" {
+			indexES = esConn.index
+		}
+
+		log.Debugf("postES -> recvData for index %s on host %s", indexES, esConn.Domain)
+
 		for _, m := range recvData.data {
 			tg := make(map[string]string)
 			for _, v := range m.Tags {
@@ -140,11 +138,11 @@ func postES() {
 				}
 			}
 
-			log.Debugf("push %s to ES index %s", dataES["ID"].(string), indexES)
+			log.Debugf("push %s to ES index %s on host %s", dataES["ID"].(string), indexES, esConn.Domain)
 			_, err := esConn.IndexWithParameters(indexES, "tatmessage", dataES["ID"].(string), "", 0, "", "", tat.DateFromFloat(m.DateCreation).Format(time.RFC3339), 0, "", "", false, nil, dataES)
-			time.Sleep(time.Duration(viper.GetInt("pause_es")) * time.Millisecond)
+			time.Sleep(time.Duration(esConn.pause) * time.Millisecond)
 			if err != nil {
-				log.Errorf("cannot index message %s in %s :%s", dataES["ID"].(string), indexES, err)
+				log.Errorf("cannot index message %s in %s on host %s: %s", dataES["ID"].(string), indexES, esConn.Domain, err)
 			}
 		}
 	}
