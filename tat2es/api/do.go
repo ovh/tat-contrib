@@ -139,7 +139,7 @@ func postES(esConn esConn, postESChan <-chan *indexableData) {
 			}
 
 			log.Debugf("push %s to ES index %s on host %s", dataES["ID"].(string), indexES, esConn.Domain)
-			_, err := esConn.IndexWithParameters(indexES, "tatmessage", dataES["ID"].(string), "", 0, "", "", tat.DateFromFloat(m.DateCreation).Format(time.RFC3339), 0, "", "", false, nil, dataES)
+			_, err := esConn.IndexWithParameters(indexES, "tatmessage", dataES["ID"].(string), "", 0, "", "", "", 0, "", "", false, nil, dataES)
 			time.Sleep(time.Duration(esConn.pause) * time.Millisecond)
 			if err != nil {
 				log.Errorf("cannot index message %s in %s on host %s: %s", dataES["ID"].(string), indexES, esConn.Domain, err)
